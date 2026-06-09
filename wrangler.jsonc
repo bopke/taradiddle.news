@@ -1,0 +1,59 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "taradiddle-news",
+  "main": "worker.ts",
+  "compatibility_date": "2026-05-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "taradiddle",
+      // Replace with the real id from `wrangler d1 create taradiddle` before remote deploy.
+      // Local dev (miniflare) works with the placeholder.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "IMAGES",
+      "bucket_name": "taradiddle-images"
+    }
+  ],
+  "ai": {
+    "binding": "AI",
+    // Workers AI always executes on Cloudflare's infrastructure, even in local dev.
+    "remote": true
+  },
+  "queues": {
+    "producers": [
+      {
+        "binding": "GENERATION_QUEUE",
+        "queue": "article-generation"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "article-generation",
+        "max_batch_size": 1,
+        "max_concurrency": 2,
+        "max_retries": 3,
+        "retry_delay": 30,
+        "dead_letter_queue": "article-generation-dlq"
+      }
+    ]
+  },
+  "triggers": {
+    "crons": [
+      "*/15 * * * *",
+      "0 6 * * *"
+    ]
+  },
+  "observability": {
+    "enabled": true
+  }
+}
