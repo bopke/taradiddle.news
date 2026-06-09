@@ -14,7 +14,10 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "db:seed:build": "node --experimental-strip-types src/db/build-seed.ts",
+    "db:seed:local": "npm run db:seed:build && wrangler d1 execute DB --local --file=./seed.sql",
+    "db:seed:remote": "npm run db:seed:build && wrangler d1 execute DB --remote --file=./seed.sql"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.0",
