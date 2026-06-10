@@ -32,8 +32,19 @@ npx wrangler queues create article-generation-dlq
 ```
 
 Secrets (`wrangler secret put <NAME>`): `ANTHROPIC_API_KEY`, `BETTER_AUTH_SECRET`,
-`GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`,
-`DISCORD_CLIENT_ID`/`DISCORD_CLIENT_SECRET`.
+`BETTER_AUTH_URL` (the public site URL), `DISCORD_CLIENT_ID`/`DISCORD_CLIENT_SECRET`.
+(GitHub/Google OAuth are planned but not wired up yet — Discord only for now.)
+
+## Auth & admins
+
+Sign-in: email+password or Discord OAuth (Discord app redirect URI:
+`<site>/api/auth/callback/discord`). Anyone can create an account, but the
+admin panel only opens for emails on the `admin_allowlist` table — admins
+invite each other from Settings, and an allowlisted email is promoted on the
+next sign-in. **Bootstrap:** on a fresh database the very first account created
+becomes admin automatically — sign up right after deploying, no SQL needed.
+
+For local dev, copy `.dev.vars.example` to `.dev.vars` and fill it in.
 
 Then:
 

@@ -1,0 +1,9 @@
+# Copy to .dev.vars (gitignored) and fill in. Used by `next dev` and `wrangler dev`.
+BETTER_AUTH_SECRET=change_me
+# BETTER_AUTH_URL: leave unset locally (inferred per request); set in production
+# BETTER_AUTH_URL=https://taradiddle.news
+# Discord application (OAuth2): redirect URI http://localhost:3000/api/auth/callback/discord
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=
+
+ANTHROPIC_API_KEY=
