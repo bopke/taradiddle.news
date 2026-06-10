@@ -1,0 +1,12 @@
+# Copy to .dev.vars (gitignored) and fill in. Used by `next dev` and `wrangler dev`.
+# Never commit real secrets — .dev.vars must stay out of git.
+
+# Cryptographically random, at least 32 chars. Generate with: openssl rand -base64 32
+BETTER_AUTH_SECRET=<generated-secret-at-least-32-chars>
+# BETTER_AUTH_URL: leave unset locally (inferred per request); set in production
+# BETTER_AUTH_URL=https://taradiddle.news
+# Discord application (OAuth2): redirect URI http://localhost:3000/api/auth/callback/discord
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=
+
+ANTHROPIC_API_KEY=
