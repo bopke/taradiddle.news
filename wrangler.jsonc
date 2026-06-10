@@ -12,9 +12,7 @@
     {
       "binding": "DB",
       "database_name": "taradiddle",
-      // Replace with the real id from `wrangler d1 create taradiddle` before remote deploy.
-      // Local dev (miniflare) works with the placeholder.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "4841f408-be62-4b12-9e99-be54643cff2d",
       "migrations_dir": "drizzle"
     }
   ],
