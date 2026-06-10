@@ -10,8 +10,12 @@ export type SessionUser = {
 };
 
 export async function getSessionUser(): Promise<SessionUser | null> {
+  // Read headers() before constructing auth: it's the dynamic-rendering
+  // signal, so build-time prerendering bails out here instead of reaching
+  // createAuth(), which needs runtime-only secrets.
+  const requestHeaders = await headers();
   const { auth } = await getRequestContext();
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await auth.api.getSession({ headers: requestHeaders });
   if (!session?.user) return null;
   const u: Record<string, unknown> = session.user;
   if (typeof u.id !== "string" || typeof u.email !== "string") return null;
