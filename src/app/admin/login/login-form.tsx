@@ -18,25 +18,40 @@ export function LoginForm() {
 
   async function signInWithEmail(event: React.FormEvent) {
     event.preventDefault();
+    if (pending) return;
     setPending(true);
     setError(null);
-    const { error } = await authClient.signIn.email({ email, password });
-    setPending(false);
-    if (error) {
-      setError(error.message ?? "Sign-in failed.");
-      return;
+    try {
+      const { error } = await authClient.signIn.email({ email, password });
+      if (error) {
+        setError(error.message ?? "Sign-in failed.");
+        return;
+      }
+      router.push("/admin");
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Sign-in failed.");
+    } finally {
+      setPending(false);
     }
-    router.push("/admin");
-    router.refresh();
   }
 
   async function signInWithDiscord() {
+    if (pending) return;
+    setPending(true);
     setError(null);
-    const { error } = await authClient.signIn.social({
-      provider: "discord",
-      callbackURL: "/admin",
-    });
-    if (error) setError(error.message ?? "Discord sign-in failed.");
+    try {
+      const { error } = await authClient.signIn.social({
+        provider: "discord",
+        callbackURL: "/admin",
+      });
+      if (error) setError(error.message ?? "Discord sign-in failed.");
+      // On success the browser navigates away to Discord.
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Discord sign-in failed.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -69,7 +84,11 @@ export function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && (
+            <p role="alert" aria-live="assertive" aria-atomic="true" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? "Signing in…" : "Sign in"}
           </Button>
@@ -81,7 +100,13 @@ export function LoginForm() {
           <Separator className="flex-1" />
         </div>
 
-        <Button type="button" variant="outline" className="w-full" onClick={signInWithDiscord}>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          disabled={pending}
+          onClick={signInWithDiscord}
+        >
           Continue with Discord
         </Button>
       </CardContent>

@@ -12,9 +12,16 @@ export type SessionUser = {
 export async function getSessionUser(): Promise<SessionUser | null> {
   const { auth } = await getRequestContext();
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) return null;
-  const { id, name, email, isAdmin } = session.user as SessionUser;
-  return { id, name, email, isAdmin: !!isAdmin };
+  if (!session?.user) return null;
+  const u: Record<string, unknown> = session.user;
+  if (typeof u.id !== "string" || typeof u.email !== "string") return null;
+  return {
+    id: u.id,
+    name: typeof u.name === "string" ? u.name : "",
+    email: u.email,
+    // SQLite stores booleans as 0/1; only strict true counts as admin.
+    isAdmin: u.isAdmin === true || u.isAdmin === 1,
+  };
 }
 
 /**

@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import * as schema from "@/db/schema";
 
@@ -16,10 +16,11 @@ export type AuthEnv = {
 };
 
 async function isAllowlisted(db: AuthDb, email: string): Promise<boolean> {
+  // Lowercase both sides — allowlist rows may be entered with any casing.
   const rows = await db
     .select({ email: schema.adminAllowlist.email })
     .from(schema.adminAllowlist)
-    .where(eq(schema.adminAllowlist.email, email.toLowerCase()));
+    .where(sql`lower(${schema.adminAllowlist.email}) = ${email.toLowerCase()}`);
   return rows.length > 0;
 }
 
@@ -40,6 +41,12 @@ async function isFirstUser(db: AuthDb): Promise<boolean> {
  * admin unconditionally (bootstrap — no manual SQL needed on a fresh deploy).
  */
 export function createAuth(db: AuthDb, env: AuthEnv) {
+  if (!env.BETTER_AUTH_SECRET) {
+    // Without this, Better Auth would fall back to a known default secret.
+    throw new Error(
+      "BETTER_AUTH_SECRET is required — set it in .dev.vars (dev) or via `wrangler secret put` (production)",
+    );
+  }
   return betterAuth({
     database: drizzleAdapter(db, { provider: "sqlite", schema }),
     secret: env.BETTER_AUTH_SECRET,

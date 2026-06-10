@@ -39,10 +39,12 @@ Secrets (`wrangler secret put <NAME>`): `ANTHROPIC_API_KEY`, `BETTER_AUTH_SECRET
 
 Sign-in: email+password or Discord OAuth (Discord app redirect URI:
 `<site>/api/auth/callback/discord`). Anyone can create an account, but the
-admin panel only opens for emails on the `admin_allowlist` table — admins
-invite each other from Settings, and an allowlisted email is promoted on the
-next sign-in. **Bootstrap:** on a fresh database the very first account created
-becomes admin automatically — sign up right after deploying, no SQL needed.
+admin panel only opens for emails on the `admin_allowlist` table (enforced in
+`src/lib/auth.ts`); an allowlisted email is promoted on the next sign-in.
+The Settings screen for inviting admins arrives in Phase 7 — until then, add
+rows to `admin_allowlist` via `wrangler d1 execute`. **Bootstrap:** on a fresh
+database the very first account created becomes admin automatically — sign up
+right after deploying, no SQL needed.
 
 For local dev, copy `.dev.vars.example` to `.dev.vars` and fill it in.
 
