@@ -1,7 +1,8 @@
-import { count, eq, sql } from "drizzle-orm";
+import { and, count, eq, ne, sql } from "drizzle-orm";
 import * as schema from "@/db/schema";
 import { generateApiKey, hashApiKey } from "@/lib/api-keys";
 import type { AuthDb } from "@/lib/auth";
+import { isUniqueViolation } from "@/lib/db-errors";
 import type { ActionResult } from "./topics";
 
 /* ── Generation profiles ──────────────────────────────────────────────────── */
@@ -40,10 +41,25 @@ export async function updateProfile(
   id: number,
   fields: ProfileFields,
 ): Promise<ActionResult> {
-  await db
-    .update(schema.generationProfiles)
-    .set({ ...fields, updatedAt: new Date() })
-    .where(eq(schema.generationProfiles.id, id));
+  const [clash] = await db
+    .select({ id: schema.generationProfiles.id })
+    .from(schema.generationProfiles)
+    .where(
+      and(eq(schema.generationProfiles.name, fields.name), ne(schema.generationProfiles.id, id)),
+    );
+  if (clash) return { ok: false, error: "A profile with this name already exists." };
+
+  try {
+    await db
+      .update(schema.generationProfiles)
+      .set({ ...fields, updatedAt: new Date() })
+      .where(eq(schema.generationProfiles.id, id));
+  } catch (error) {
+    if (isUniqueViolation(error, "generation_profiles")) {
+      return { ok: false, error: "A profile with this name already exists." };
+    }
+    throw error;
+  }
   return { ok: true };
 }
 

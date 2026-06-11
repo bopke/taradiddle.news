@@ -1,6 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import * as schema from "@/db/schema";
 import type { AuthDb } from "@/lib/auth";
+import { isUniqueViolation } from "@/lib/db-errors";
 import { normalizeTitle } from "@/lib/slugs";
 import { enqueueGeneration, type GenerationQueue } from "@/queue/producer";
 
@@ -108,10 +109,18 @@ export async function updateTopic(
     if (clash) return { ok: false, error: "A topic with this title already exists." };
   }
 
-  await db
-    .update(schema.topics)
-    .set({ ...fields, normalizedTitle, updatedAt: new Date() })
-    .where(eq(schema.topics.id, id));
+  try {
+    await db
+      .update(schema.topics)
+      .set({ ...fields, normalizedTitle, updatedAt: new Date() })
+      .where(eq(schema.topics.id, id));
+  } catch (error) {
+    // Race: a clashing topic landed between the pre-check and this update.
+    if (isUniqueViolation(error, "normalized_title")) {
+      return { ok: false, error: "A topic with this title already exists." };
+    }
+    throw error;
+  }
   return { ok: true };
 }
 

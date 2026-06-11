@@ -48,12 +48,13 @@ export function AdminSidebar({
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.label}
               className={cn(
                 "flex items-center gap-2.5 rounded px-2.5 py-2 text-[13px] font-medium text-admin-ink-dim hover:bg-admin-bg hover:text-admin-ink max-[980px]:justify-center",
                 active && "bg-admin-active font-semibold text-admin-ink",
               )}
             >
-              <span className="w-4 text-center">{item.icon}</span>
+              <span aria-hidden="true" className="w-4 text-center">{item.icon}</span>
               <span className="max-[980px]:hidden">{item.label}</span>
               {count && (
                 <span

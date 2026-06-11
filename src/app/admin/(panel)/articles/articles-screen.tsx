@@ -78,8 +78,16 @@ export function ArticlesScreen({ articles }: { articles: ArticleRow[] }) {
             {articles.map((a) => (
               <tr
                 key={a.id}
-                className="cursor-pointer last:[&>td]:border-b-0 hover:[&>td]:bg-[#f7f9fa]"
+                tabIndex={0}
+                className="cursor-pointer last:[&>td]:border-b-0 hover:[&>td]:bg-[#f7f9fa] focus-visible:outline-2 focus-visible:outline-admin-blue"
                 onClick={() => router.push(`/admin/articles/${a.id}`)}
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return; // inner buttons handle their own keys
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    router.push(`/admin/articles/${a.id}`);
+                  }
+                }}
               >
                 <td className={tdClass}>
                   <CellTitle>{a.title}</CellTitle>
@@ -138,11 +146,23 @@ export function ArticlesScreen({ articles }: { articles: ArticleRow[] }) {
 
 function ConfirmActionDialog({ confirm, onClose }: { confirm: Confirm; onClose: () => void }) {
   const { type, article } = confirm;
+  const [submitting, setSubmitting] = useState(false);
   const action = type === "regenerate" ? regenerateArticleAction : deleteArticleAction;
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-[420px]">
-        <form action={action} onSubmit={onClose}>
+        <form
+          action={action}
+          onSubmit={(e) => {
+            // Destructive + enqueuing: block rapid double-submission.
+            if (submitting) {
+              e.preventDefault();
+              return;
+            }
+            setSubmitting(true);
+            onClose();
+          }}
+        >
           <input type="hidden" name="articleId" value={article.id} />
           <DialogHeader>
             <DialogTitle className="text-sm font-bold">
@@ -167,7 +187,7 @@ function ConfirmActionDialog({ confirm, onClose }: { confirm: Confirm; onClose: 
             <button type="button" className={adminBtnClass()} onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className={adminBtnClass({ kind: "accent" })}>
+            <button type="submit" disabled={submitting} className={adminBtnClass({ kind: "accent" })}>
               {type === "regenerate" ? "Regenerate" : "Delete article"}
             </button>
           </DialogFooter>

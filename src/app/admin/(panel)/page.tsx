@@ -22,13 +22,14 @@ export const metadata = { title: "Dashboard — Taradiddle Admin" };
 export default async function AdminDashboardPage() {
   const { db } = await getRequestContext();
 
-  const [pending, inQueue, failures, published, recentJobs] = await Promise.all([
+  const [pending, pendingTotal, inQueue, failures, published, recentJobs] = await Promise.all([
     db
       .select()
       .from(schema.topics)
       .where(eq(schema.topics.status, "suggested"))
       .orderBy(desc(schema.topics.createdAt))
       .limit(8),
+    db.select({ total: count() }).from(schema.topics).where(eq(schema.topics.status, "suggested")),
     db
       .select({ total: count() })
       .from(schema.topics)
@@ -60,7 +61,7 @@ export default async function AdminDashboardPage() {
   });
 
   const stats = [
-    { label: "Pending suggestions", value: pending.length, href: "/admin/topics" },
+    { label: "Pending suggestions", value: pendingTotal[0].total, href: "/admin/topics" },
     { label: "Queue depth", value: inQueue[0].total, href: "/admin/jobs" },
     {
       label: "Recent failures",

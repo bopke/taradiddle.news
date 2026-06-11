@@ -20,23 +20,26 @@ export default async function SettingsPage() {
     db.select().from(schema.generationProfiles),
   ]);
 
+  const selfEmail = user.email.toLowerCase();
   const userByEmail = new Map(users.map((u) => [u.email.toLowerCase(), u]));
   const admins = allowlist.map((a) => {
-    const account = userByEmail.get(a.email);
+    // Rows are normally stored lowercase, but tolerate hand-inserted ones.
+    const email = a.email.toLowerCase();
     return {
-      email: a.email,
-      hasAccount: !!account,
-      isSelf: a.email === user.email.toLowerCase(),
+      email,
+      hasAccount: userByEmail.has(email),
+      isSelf: email === selfEmail,
       added: a.createdAt.toISOString(),
     };
   });
   // Bootstrap admins (first user) may not be on the allowlist — show them too.
   for (const u of users.filter((u) => u.isAdmin)) {
-    if (!admins.some((a) => a.email === u.email.toLowerCase())) {
+    const email = u.email.toLowerCase();
+    if (!admins.some((a) => a.email === email)) {
       admins.unshift({
-        email: u.email.toLowerCase(),
+        email,
         hasAccount: true,
-        isSelf: u.email.toLowerCase() === user.email.toLowerCase(),
+        isSelf: email === selfEmail,
         added: u.createdAt.toISOString(),
       });
     }

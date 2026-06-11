@@ -52,6 +52,18 @@ export function EditorScreen({
   const [active, setActive] = useState(primaryLocale);
   const current = locales.find((l) => l.locale === active) ?? locales[0];
 
+  // Defensive: only reachable if the locales setting was emptied by hand.
+  if (!current) {
+    return (
+      <Panel title="No locales configured">
+        <p className="text-[12.5px] text-admin-ink-dim">
+          The <code>locales</code> setting is empty — restore it (e.g. <code>[&quot;en&quot;,&quot;pl&quot;]</code>)
+          to edit articles.
+        </p>
+      </Panel>
+    );
+  }
+
   return (
     <>
       <Link

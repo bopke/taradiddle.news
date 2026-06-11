@@ -162,12 +162,21 @@ export function TopicsScreen({
             {visible.map((t) => (
               <tr
                 key={t.id}
-                className="cursor-pointer last:[&>td]:border-b-0 hover:[&>td]:bg-[#f7f9fa]"
+                tabIndex={0}
+                className="cursor-pointer last:[&>td]:border-b-0 hover:[&>td]:bg-[#f7f9fa] focus-visible:outline-2 focus-visible:outline-admin-blue"
                 onClick={() => router.push(`/admin/topics/${t.id}`)}
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return; // checkbox handles its own keys
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    router.push(`/admin/topics/${t.id}`);
+                  }
+                }}
               >
                 <td className={cn(tdClass, "text-center")} onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
+                    aria-label={`Select "${t.title}"`}
                     checked={selected.includes(t.id)}
                     onChange={() => toggle(t.id)}
                   />

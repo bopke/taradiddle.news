@@ -1,6 +1,7 @@
 import { and, eq, ne } from "drizzle-orm";
 import * as schema from "@/db/schema";
 import type { AuthDb } from "@/lib/auth";
+import { isUniqueViolation } from "@/lib/db-errors";
 import { slugify } from "@/lib/slugs";
 import type { ActionResult } from "./topics";
 
@@ -50,15 +51,23 @@ export async function saveArticleTranslation(
     );
   if (clash) return { ok: false, error: `Slug "${slug}" is already used in ${locale}.` };
 
-  await db
-    .update(schema.articleTranslations)
-    .set({ ...fields, slug })
-    .where(
-      and(
-        eq(schema.articleTranslations.articleId, articleId),
-        eq(schema.articleTranslations.locale, locale),
-      ),
-    );
+  try {
+    await db
+      .update(schema.articleTranslations)
+      .set({ ...fields, slug })
+      .where(
+        and(
+          eq(schema.articleTranslations.articleId, articleId),
+          eq(schema.articleTranslations.locale, locale),
+        ),
+      );
+  } catch (error) {
+    // Race: another writer claimed the slug between the pre-check and here.
+    if (isUniqueViolation(error, "article_translations")) {
+      return { ok: false, error: `Slug "${slug}" is already used in ${locale}.` };
+    }
+    throw error;
+  }
   await db
     .update(schema.articles)
     .set({ editedBy, updatedAt: new Date() })
