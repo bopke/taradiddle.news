@@ -143,3 +143,18 @@
   --font-serif: var(--font-newsreader, "Newsreader"), Georgia, serif;
   --font-mono: var(--font-jetbrains-mono, "JetBrains Mono"), monospace;
 }
+
+/* ---------------------------------------------------------------------------
+ * Admin palette (docs/superpowers/design — Taradiddle Admin.html). Dense,
+ * neutral internal tool; distinct from the public site's paper/ink look.
+ * ------------------------------------------------------------------------- */
+@theme {
+  --color-admin-bg: #f2f3f4;
+  --color-admin-panel: #ffffff;
+  --color-admin-border: #d9dcdf;
+  --color-admin-border-soft: #e8eaec;
+  --color-admin-ink: #1f2326;
+  --color-admin-ink-dim: #6b7178;
+  --color-admin-blue: oklch(0.46 0.1 250);
+  --color-admin-active: #e9edf2;
+}
