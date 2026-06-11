@@ -88,7 +88,7 @@ export function SearchBox() {
           />
           <button
             type="button"
-            aria-label="Close search"
+            aria-label={t("closeSearch")}
             onClick={() => {
               setQ("");
               setOpen(false);

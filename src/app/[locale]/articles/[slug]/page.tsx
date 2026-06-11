@@ -10,6 +10,7 @@ import {
   HeroImage,
   RailHeading,
 } from "@/components/public/article-bits";
+import { BackToFront, PageMain } from "@/components/public/chrome";
 import { renderArticleHtml } from "@/lib/public/markdown";
 import {
   bumpViewCount,
@@ -92,7 +93,7 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
   };
 
   return (
-    <main className="mx-auto max-w-[820px] p-12 max-[900px]:p-7">
+    <PageMain className="mx-auto max-w-[820px]">
       <script
         type="application/ld+json"
         // "<" escaped so content (e.g. "</script>" in a title) can't terminate
@@ -152,12 +153,7 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
         </section>
       )}
 
-      <Link
-        href="/"
-        className="mt-9 inline-block font-sans text-xs font-semibold uppercase tracking-[0.1em] text-accent hover:underline"
-      >
-        ← {t("backToFront")}
-      </Link>
-    </main>
+      <BackToFront />
+    </PageMain>
   );
 }

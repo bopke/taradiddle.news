@@ -1,6 +1,5 @@
-import { getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
 import { ArticleCard } from "./article-bits";
+import { BackToFront, DoubleRule, PageMain } from "./chrome";
 import type { PublicArticle } from "@/lib/public/queries";
 
 export async function Listing({
@@ -14,9 +13,8 @@ export async function Listing({
   articles: PublicArticle[];
   emptyText: string;
 }) {
-  const t = await getTranslations("article");
   return (
-    <main className="p-12 max-[900px]:p-7">
+    <PageMain>
       <header className="pt-2 text-center">
         <h1 className="text-[42px] font-extrabold tracking-[-0.01em]">{heading}</h1>
         {sub && (
@@ -25,7 +23,7 @@ export async function Listing({
           </p>
         )}
       </header>
-      <div className="my-[26px] [border-bottom:3px_double_var(--color-ink)]" />
+      <DoubleRule />
       {articles.length === 0 ? (
         <p className="py-10 text-center text-[17px] italic text-ink-soft">{emptyText}</p>
       ) : (
@@ -35,12 +33,7 @@ export async function Listing({
           ))}
         </div>
       )}
-      <Link
-        href="/"
-        className="mt-9 inline-block font-sans text-xs font-semibold uppercase tracking-[0.1em] text-accent hover:underline"
-      >
-        ← {t("backToFront")}
-      </Link>
-    </main>
+      <BackToFront />
+    </PageMain>
   );
 }

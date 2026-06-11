@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { ArticleCard, MostProcessed, RailHeading } from "@/components/public/article-bits";
+import { DoubleRule, PageMain } from "@/components/public/chrome";
 import { getFeedPage, getMostProcessed } from "@/lib/public/queries";
 import { getPublicContext } from "@/lib/public/site";
 import { cn } from "@/lib/utils";
@@ -55,7 +56,7 @@ export default async function HomePage({
   const grid = page === 1 ? articles.slice(3) : articles;
 
   return (
-    <main className="p-12 max-[900px]:p-7">
+    <PageMain>
       {page === 1 && lead && (
         <>
           <section className="grid grid-cols-[1.7fr_1fr] gap-11 max-[900px]:grid-cols-1">
@@ -66,7 +67,7 @@ export default async function HomePage({
               ))}
             </div>
           </section>
-          <div className="my-[26px] [border-bottom:3px_double_var(--color-ink)]" />
+          <DoubleRule />
         </>
       )}
 
@@ -121,6 +122,6 @@ export default async function HomePage({
         </div>
         <MostProcessed articles={mostProcessed} />
       </section>
-    </main>
+    </PageMain>
   );
 }
