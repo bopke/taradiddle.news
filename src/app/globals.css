@@ -158,3 +158,46 @@
   --color-admin-blue: oklch(0.46 0.1 250);
   --color-admin-active: #e9edf2;
 }
+
+/* ---------------------------------------------------------------------------
+ * Public article body (rendered from markdown). Pull quotes are plain "> "
+ * blockquotes in body_md; the drop cap decorates the opening paragraph.
+ * ------------------------------------------------------------------------- */
+.article-prose {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-size: 19px;
+  line-height: 1.62;
+}
+.article-prose > p:first-child::first-letter {
+  font-size: 54px;
+  font-weight: 700;
+  float: left;
+  line-height: 0.85;
+  padding: 4px 8px 0 0;
+  color: var(--color-accent);
+}
+.article-prose blockquote {
+  font-size: 26px;
+  line-height: 1.3;
+  font-weight: 500;
+  font-style: italic;
+  text-align: center;
+  padding: 18px 30px;
+  margin: 6px 0;
+  border-top: 3px double var(--color-ink);
+  border-bottom: 3px double var(--color-ink);
+  text-wrap: pretty;
+}
+.article-prose a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.article-prose ul,
+.article-prose ol {
+  padding-left: 1.4em;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

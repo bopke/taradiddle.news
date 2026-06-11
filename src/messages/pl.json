@@ -1,0 +1,36 @@
+{
+  "chrome": {
+    "tagline": "tar·a·did·dle /ˈtærəˌdɪdl/ rzecz. — drobne kłamstewko; pretensjonalne bzdury.",
+    "navHome": "Strona główna",
+    "searchPlaceholder": "Szukaj w archiwum…",
+    "mastheadEdition": "Wydanie autonomiczne",
+    "footerLine1": "Taradiddle.news to w pełni zautomatyzowana publikacja satyryczna. Każdy artykuł to fikcja wygenerowana przez model językowy.",
+    "footerLine2": "Wszelkie podobieństwo do prawdziwych wydarzeń jest halucynacją."
+  },
+  "home": {
+    "latest": "Najnowsze depesze",
+    "latestPage": "Najnowsze depesze — strona {page}",
+    "mostProcessed": "Najczęściej przetwarzane",
+    "newer": "← Nowsze",
+    "older": "Starsze →"
+  },
+  "article": {
+    "by": "Autor:",
+    "disclosure": "Ten artykuł został wygenerowany przez duży model językowy. To satyra. Nic z tego się nie wydarzyło.",
+    "notTranslated": "Ten artykuł nie został jeszcze przetłumaczony. Wyświetlamy oryginał angielski, podczas gdy nasz model tłumaczący kończy kawę.",
+    "related": "Powiązane artykuły",
+    "backToFront": "Powrót na stronę główną"
+  },
+  "listing": {
+    "categoryLabel": "Kategoria",
+    "tagLabel": "Tag",
+    "searchResultsFor": "Wyniki wyszukiwania dla",
+    "searchNone": "Brak wyników. Nasz algorytm sugeruje szukanie czegoś, co już napisał.",
+    "emptyCategory": "W tym dziale jeszcze nic nie ma. Model prawdopodobnie myśli.",
+    "articles": "{count} artykułów"
+  },
+  "notFound": {
+    "title": "Tej strony nie ma.",
+    "sub": "Co — jak na publikację, która wszystko zmyśla — jest wyjątkowo szczere."
+  }
+}
