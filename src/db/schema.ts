@@ -277,6 +277,20 @@ export const apiKeys = sqliteTable("api_keys", {
   revokedAt: integer("revoked_at", { mode: "timestamp" }),
 });
 
+/** Per-key, per-hour request counter backing the suggestion API rate limit. */
+export const apiKeyUsage = sqliteTable(
+  "api_key_usage",
+  {
+    apiKeyId: integer("api_key_id")
+      .notNull()
+      .references(() => apiKeys.id, { onDelete: "cascade" }),
+    /** Hour bucket: unix epoch seconds truncated to the hour. */
+    windowStart: integer("window_start").notNull(),
+    count: integer("count").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.apiKeyId, t.windowStart] })],
+);
+
 export const JOB_STATUSES = ["queued", "running", "succeeded", "failed"] as const;
 export type JobStatus = (typeof JOB_STATUSES)[number];
 

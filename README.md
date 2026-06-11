@@ -54,6 +54,14 @@ Then:
 npm run deploy
 ```
 
+### CI (Cloudflare Workers Builds)
+
+- Build command: `npm run build` (runs `opennextjs-cloudflare build`).
+- Deploy command: `npx wrangler d1 migrations apply DB --remote && npx wrangler deploy`
+  — migrations apply right before the new code goes live; `migrations apply` is
+  a no-op when nothing is pending. Keep migrations additive (no drops/renames in
+  the same deploy as code that needs the old shape).
+
 ## Architecture notes
 
 - `worker.ts` is the worker entrypoint: it wraps the OpenNext-generated `fetch`
