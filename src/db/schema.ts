@@ -109,6 +109,15 @@ export const topics = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     /** Always stored in the primary locale (normalized at ingestion). */
     title: text("title").notNull(),
+    /**
+     * normalizeTitle(title) — unique-indexed so duplicate topics are rejected
+     * at the database level (race-proof backstop for the API's dedup check).
+     * Every code path that inserts or retitles a topic must set this via
+     * normalizeTitle() from src/lib/slugs.ts; the '' default exists only so
+     * the migration could backfill, and a forgotten path collides loudly on
+     * its second insert rather than silently bypassing dedup.
+     */
+    normalizedTitle: text("normalized_title").notNull().default(""),
     description: text("description"),
     /** Original submission when it arrived in a non-primary language. */
     originalTitle: text("original_title"),
@@ -131,7 +140,10 @@ export const topics = sqliteTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index("topics_picker_idx").on(t.status, t.priority, t.scheduledFor)],
+  (t) => [
+    index("topics_picker_idx").on(t.status, t.priority, t.scheduledFor),
+    uniqueIndex("topics_normalized_title_idx").on(t.normalizedTitle),
+  ],
 );
 
 export const topicNotes = sqliteTable(
@@ -276,6 +288,20 @@ export const apiKeys = sqliteTable("api_keys", {
   createdAt: createdAt(),
   revokedAt: integer("revoked_at", { mode: "timestamp" }),
 });
+
+/** Per-key, per-hour request counter backing the suggestion API rate limit. */
+export const apiKeyUsage = sqliteTable(
+  "api_key_usage",
+  {
+    apiKeyId: integer("api_key_id")
+      .notNull()
+      .references(() => apiKeys.id, { onDelete: "cascade" }),
+    /** Hour bucket: unix epoch seconds truncated to the hour. */
+    windowStart: integer("window_start").notNull(),
+    count: integer("count").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.apiKeyId, t.windowStart] })],
+);
 
 export const JOB_STATUSES = ["queued", "running", "succeeded", "failed"] as const;
 export type JobStatus = (typeof JOB_STATUSES)[number];
