@@ -32,10 +32,19 @@ export const DEFAULT_SETTINGS = {
   default_locale: "en",
 } as const;
 
+/** Widens the `as const` literal types (true → boolean, 5 → number, …). */
+type Widen<T> = T extends boolean
+  ? boolean
+  : T extends number
+    ? number
+    : T extends string
+      ? string
+      : T extends readonly (infer U)[]
+        ? Widen<U>[]
+        : T;
+
 export type SettingsShape = {
-  -readonly [K in keyof typeof DEFAULT_SETTINGS]: (typeof DEFAULT_SETTINGS)[K] extends readonly string[]
-    ? string[]
-    : (typeof DEFAULT_SETTINGS)[K];
+  -readonly [K in keyof typeof DEFAULT_SETTINGS]: Widen<(typeof DEFAULT_SETTINGS)[K]>;
 };
 
 export const DEFAULT_PROFILE = {
