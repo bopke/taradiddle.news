@@ -75,7 +75,17 @@ export async function saveArticleTranslation(
   return { ok: true };
 }
 
-/** Shared (locale-independent) fields + tag list in the primary locale. */
+/**
+ * Shared (locale-independent) fields + tag list in the primary locale.
+ *
+ * Atomicity note: D1 has no interactive transactions (drizzle's
+ * `db.transaction()` issues raw BEGIN/COMMIT, which D1 rejects at runtime, and
+ * `db.batch()` can't express this read-dependent upsert flow). Instead the
+ * steps are ordered so failures can't corrupt: tag rows are created first
+ * (additive — an orphaned tag is harmless and gets reused), and the
+ * destructive link swap happens last. Any error is returned as an
+ * ActionResult, preserving the server-action contract.
+ */
 export async function saveArticleShared(
   db: AuthDb,
   articleId: number,
@@ -84,33 +94,43 @@ export async function saveArticleShared(
   primaryLocale: string,
   editedBy: string,
 ): Promise<ActionResult> {
-  await db
-    .update(schema.articles)
-    .set({ categoryId, editedBy, updatedAt: new Date() })
-    .where(eq(schema.articles.id, articleId));
-
-  // Re-link tags: reuse by primary-locale slug, create missing.
-  await db.delete(schema.articleTags).where(eq(schema.articleTags.articleId, articleId));
-  for (const name of tagNames.map((n) => n.trim()).filter(Boolean)) {
-    const slug = slugify(name);
-    const [existing] = await db
-      .select({ tagId: schema.tagTranslations.tagId })
-      .from(schema.tagTranslations)
-      .where(
-        and(eq(schema.tagTranslations.locale, primaryLocale), eq(schema.tagTranslations.slug, slug)),
-      );
-    let tagId = existing?.tagId;
-    if (!tagId) {
-      const [tag] = await db.insert(schema.tags).values({}).returning();
-      tagId = tag.id;
-      await db
-        .insert(schema.tagTranslations)
-        .values({ tagId, locale: primaryLocale, name, slug });
+  try {
+    // 1. Resolve/create tags (additive, safe to repeat).
+    const tagIds: number[] = [];
+    for (const name of tagNames.map((n) => n.trim()).filter(Boolean)) {
+      const slug = slugify(name);
+      const [existing] = await db
+        .select({ tagId: schema.tagTranslations.tagId })
+        .from(schema.tagTranslations)
+        .where(
+          and(
+            eq(schema.tagTranslations.locale, primaryLocale),
+            eq(schema.tagTranslations.slug, slug),
+          ),
+        );
+      let tagId = existing?.tagId;
+      if (!tagId) {
+        const [tag] = await db.insert(schema.tags).values({}).returning();
+        tagId = tag.id;
+        await db.insert(schema.tagTranslations).values({ tagId, locale: primaryLocale, name, slug });
+      }
+      tagIds.push(tagId);
     }
+
+    // 2. Update the article core.
     await db
-      .insert(schema.articleTags)
-      .values({ articleId, tagId })
-      .onConflictDoNothing();
+      .update(schema.articles)
+      .set({ categoryId, editedBy, updatedAt: new Date() })
+      .where(eq(schema.articles.id, articleId));
+
+    // 3. Swap the links last — the only destructive step.
+    await db.delete(schema.articleTags).where(eq(schema.articleTags.articleId, articleId));
+    for (const tagId of tagIds) {
+      await db.insert(schema.articleTags).values({ articleId, tagId }).onConflictDoNothing();
+    }
+    return { ok: true };
+  } catch (error) {
+    console.error("saveArticleShared failed", error);
+    return { ok: false, error: "Saving failed — please retry." };
   }
-  return { ok: true };
 }
