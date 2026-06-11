@@ -18,9 +18,6 @@
     "db:seed:build": "node --experimental-strip-types src/db/build-seed.ts",
     "db:seed:local": "npm run db:seed:build && wrangler d1 execute DB --local --file=./seed.sql",
     "db:seed:remote": "npm run db:seed:build && wrangler d1 execute DB --remote --file=./seed.sql",
-    "db:demo:build": "node --experimental-strip-types src/db/build-demo-articles.ts",
-    "db:demo:local": "npm run db:demo:build && wrangler d1 execute DB --local --file=./demo-articles.sql",
-    "db:demo:remote": "npm run db:demo:build && wrangler d1 execute DB --remote --file=./demo-articles.sql"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.0",
