@@ -224,8 +224,9 @@ describe("consumer — generate", () => {
 
     expect(db.select().from(schema.generationJobs).all()[0].status).toBe("failed");
     expect(db.select().from(schema.topics).all()[0].status).toBe("failed");
-    // Still retried so Queues can move it to the DLQ.
-    expect(message.retry).toHaveBeenCalled();
+    // Still retried so Queues can move it to the DLQ, with backoff scaled
+    // by attempt count (same 30s-per-attempt contract as non-final retries).
+    expect(message.retry).toHaveBeenCalledWith({ delaySeconds: 30 * MAX_ATTEMPTS });
   });
 
   it("skips duplicate delivery for a done topic (idempotency)", async () => {
