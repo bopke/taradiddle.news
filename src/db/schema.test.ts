@@ -134,4 +134,24 @@ describe("schema", () => {
     expect(topic.status).toBe("suggested");
     expect(topic.priority).toBe(0);
   });
+
+  it("rejects two topics with the same normalized title at the DB level", () => {
+    db.insert(schema.topics)
+      .values({
+        title: "Moon Declares Independence!",
+        normalizedTitle: "moon declares independence",
+        source: "api",
+      })
+      .run();
+    expect(() =>
+      db
+        .insert(schema.topics)
+        .values({
+          title: "MOON DECLARES INDEPENDENCE",
+          normalizedTitle: "moon declares independence",
+          source: "admin",
+        })
+        .run(),
+    ).toThrow(/UNIQUE/);
+  });
 });

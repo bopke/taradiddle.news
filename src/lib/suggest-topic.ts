@@ -75,13 +75,20 @@ export async function handleSuggestionRequest(
     return json(422, { error: "invalid_request", details: z.flattenError(parsed.error).fieldErrors });
   }
   const body = parsed.data;
+  const settings = await getSettings(db);
 
   let categoryId: number | null = null;
   if (body.category) {
-    const [category] = await db
-      .select({ id: schema.categoryTranslations.categoryId })
+    // Slugs are unique per (locale, slug); the same string can exist in
+    // several locales. Prefer the primary-locale match when ambiguous.
+    const matches = await db
+      .select({
+        id: schema.categoryTranslations.categoryId,
+        locale: schema.categoryTranslations.locale,
+      })
       .from(schema.categoryTranslations)
       .where(eq(schema.categoryTranslations.slug, body.category));
+    const category = matches.find((m) => m.locale === settings.default_locale) ?? matches[0];
     if (!category) {
       return json(422, { error: "invalid_request", details: `unknown category "${body.category}"` });
     }
@@ -102,7 +109,6 @@ export async function handleSuggestionRequest(
   }
 
   // --- Moderation + language normalization ------------------------------------
-  const settings = await getSettings(db);
   const moderation = await moderateTopic(deps.anthropic, settings, {
     title: body.title,
     description: body.description,
@@ -122,11 +128,13 @@ export async function handleSuggestionRequest(
     return json(409, { error: "duplicate_topic" });
   }
 
-  // --- Insert ------------------------------------------------------------------
+  // --- Insert (atomic: the unique index on normalized_title backstops the
+  // read-based dedup above against concurrent identical submissions) ----------
   const [topic] = await db
     .insert(schema.topics)
     .values({
       title: normalized.title,
+      normalizedTitle: normalizeTitle(normalized.title),
       description: normalized.description,
       originalTitle: normalized.original?.title ?? null,
       originalDescription: normalized.original?.description ?? null,
@@ -136,7 +144,9 @@ export async function handleSuggestionRequest(
       source: "api",
       submittedBy: apiKey.name,
     })
+    .onConflictDoNothing({ target: schema.topics.normalizedTitle })
     .returning();
+  if (!topic) return json(409, { error: "duplicate_topic" });
 
   return json(201, {
     topic: {

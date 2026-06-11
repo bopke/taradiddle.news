@@ -31,7 +31,7 @@ export async function handleGenerationBatch(
   _ctx: ExecutionContext,
 ): Promise<void> {
   const deps: ConsumerDeps = {
-    db: getDb(env) as unknown as AuthDb,
+    db: getDb(env),
     anthropic: createAnthropicClient(env),
     images: { ai: env.AI, bucket: env.IMAGE_BUCKET },
   };

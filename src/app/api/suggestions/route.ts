@@ -1,16 +1,18 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getDb } from "@/db";
 import { createAnthropicClient } from "@/lib/anthropic";
-import type { AuthDb } from "@/lib/auth";
 import { handleSuggestionRequest } from "@/lib/suggest-topic";
 
 export async function POST(request: Request): Promise<Response> {
-  const { env } = await getCloudflareContext({ async: true });
-  return handleSuggestionRequest(
-    {
-      db: getDb(env) as unknown as AuthDb,
-      anthropic: createAnthropicClient(env),
-    },
-    request,
-  );
+  // Init failures (e.g. missing ANTHROPIC_API_KEY) become structured JSON
+  // rather than Next's default error page — this endpoint serves bots.
+  let deps;
+  try {
+    const { env } = await getCloudflareContext({ async: true });
+    deps = { db: getDb(env), anthropic: createAnthropicClient(env) };
+  } catch (error) {
+    console.error("suggestion API init failed", error);
+    return Response.json({ error: "internal_error" }, { status: 500 });
+  }
+  return handleSuggestionRequest(deps, request);
 }

@@ -109,6 +109,15 @@ export const topics = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     /** Always stored in the primary locale (normalized at ingestion). */
     title: text("title").notNull(),
+    /**
+     * normalizeTitle(title) — unique-indexed so duplicate topics are rejected
+     * at the database level (race-proof backstop for the API's dedup check).
+     * Every code path that inserts or retitles a topic must set this via
+     * normalizeTitle() from src/lib/slugs.ts; the '' default exists only so
+     * the migration could backfill, and a forgotten path collides loudly on
+     * its second insert rather than silently bypassing dedup.
+     */
+    normalizedTitle: text("normalized_title").notNull().default(""),
     description: text("description"),
     /** Original submission when it arrived in a non-primary language. */
     originalTitle: text("original_title"),
@@ -131,7 +140,10 @@ export const topics = sqliteTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index("topics_picker_idx").on(t.status, t.priority, t.scheduledFor)],
+  (t) => [
+    index("topics_picker_idx").on(t.status, t.priority, t.scheduledFor),
+    uniqueIndex("topics_normalized_title_idx").on(t.normalizedTitle),
+  ],
 );
 
 export const topicNotes = sqliteTable(

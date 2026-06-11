@@ -164,6 +164,27 @@ describe("suggestion API", () => {
     expect(response.status).toBe(409);
   });
 
+  it("returns 409 via the DB constraint when a duplicate lands between read-check and insert", async () => {
+    // Simulates the race: this row appeared "after" our pre-read — its title
+    // text wouldn't match the read-based check, but its normalized_title does.
+    db.insert(schema.topics)
+      .values({
+        title: "(concurrently inserted row)",
+        normalizedTitle: "moon declares independence",
+        source: "api",
+      })
+      .run();
+
+    const response = await handleSuggestionRequest(
+      makeDeps(),
+      makeRequest({ title: "Moon Declares Independence!" }),
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: "duplicate_topic" });
+    // Nothing extra stored.
+    expect(db.select().from(schema.topics).all()).toHaveLength(1);
+  });
+
   it("stores the raw submission when moderation fails open", async () => {
     const deps: SuggestDeps = {
       db: asDb(),
