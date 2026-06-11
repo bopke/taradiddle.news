@@ -25,13 +25,22 @@ export type TopicInput = {
 };
 
 export type ModerationResult =
-  /** Topic passed; title/description are normalized to the primary locale. */
+  /**
+   * Topic passed. Normalization is best-effort, not guaranteed: title and
+   * description are translated to the primary locale only when the model
+   * supplied a translation (detected_locale !== default_locale AND
+   * title_primary !== null) — then `original` holds the submitted text and its
+   * locale. If the model detected a foreign language but returned
+   * title_primary === null, the original foreign-language content is kept
+   * as-is and `original` stays null, so `detectedLocale` may differ from the
+   * primary locale while the content remains untranslated. (Generation copes:
+   * it always writes in the primary locale regardless of topic language.)
+   */
   | {
       kind: "allowed";
       detectedLocale: string;
       title: string;
       description: string | null;
-      /** Original text when the submission was not in the primary locale. */
       original: { title: string; description: string | null; locale: string } | null;
     }
   /** Topic rejected; reason comes verbatim from the model. */
