@@ -7,7 +7,7 @@ export async function GET() {
     ok: true,
     bindings: {
       db: !!env.DB,
-      images: !!env.IMAGES,
+      images: !!env.IMAGE_BUCKET,
       generationQueue: !!env.GENERATION_QUEUE,
       ai: !!env.AI,
     },

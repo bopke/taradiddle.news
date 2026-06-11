@@ -18,7 +18,9 @@
   ],
   "r2_buckets": [
     {
-      "binding": "IMAGES",
+      // Not "IMAGES": OpenNext reserves that env member for the Cloudflare
+      // Images product binding, and the type declarations would collide.
+      "binding": "IMAGE_BUCKET",
       "bucket_name": "taradiddle-images"
     }
   ],
