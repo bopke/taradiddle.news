@@ -4,9 +4,17 @@ import type { AuthDb } from "@/lib/auth";
 import { getSettings } from "@/lib/settings";
 import type { SettingsShape } from "@/db/defaults";
 
-/** Canonical site origin for absolute URLs (sitemap, OG, JSON-LD, RSS). */
+/**
+ * Canonical site origin for absolute URLs (sitemap, OG, JSON-LD, RSS).
+ * Normalized through URL so values like "https://example.com/auth/" or
+ * trailing slashes can't leak paths into generated URLs.
+ */
 export function siteOrigin(env: { BETTER_AUTH_URL?: string }): string {
-  return env.BETTER_AUTH_URL || "http://localhost:3000";
+  try {
+    return new URL(env.BETTER_AUTH_URL ?? "").origin;
+  } catch {
+    return "http://localhost:3000";
+  }
 }
 
 export type PublicContext = {

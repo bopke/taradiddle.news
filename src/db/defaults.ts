@@ -59,12 +59,11 @@ export const DEFAULT_PROFILE = {
   isDefault: true,
 } as const;
 
-/** Starter categories with en + pl translations. */
+/** Starter categories with en + pl translations — matches the design mockup's nav. */
 export const STARTER_CATEGORIES = [
-  { en: { name: "World", slug: "world" }, pl: { name: "Świat", slug: "swiat" } },
-  { en: { name: "Politics", slug: "politics" }, pl: { name: "Polityka", slug: "polityka" } },
   { en: { name: "Technology", slug: "technology" }, pl: { name: "Technologia", slug: "technologia" } },
-  { en: { name: "Science", slug: "science" }, pl: { name: "Nauka", slug: "nauka" } },
   { en: { name: "Business", slug: "business" }, pl: { name: "Biznes", slug: "biznes" } },
-  { en: { name: "Culture", slug: "culture" }, pl: { name: "Kultura", slug: "kultura" } },
+  { en: { name: "Science", slug: "science" }, pl: { name: "Nauka", slug: "nauka" } },
+  { en: { name: "Lifestyle", slug: "lifestyle" }, pl: { name: "Styl życia", slug: "styl-zycia" } },
+  { en: { name: "Opinion", slug: "opinion" }, pl: { name: "Opinie", slug: "opinie" } },
 ] as const;

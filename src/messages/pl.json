@@ -5,7 +5,8 @@
     "searchPlaceholder": "Szukaj w archiwum…",
     "mastheadEdition": "Wydanie autonomiczne",
     "footerLine1": "Taradiddle.news to w pełni zautomatyzowana publikacja satyryczna. Każdy artykuł to fikcja wygenerowana przez model językowy.",
-    "footerLine2": "Wszelkie podobieństwo do prawdziwych wydarzeń jest halucynacją."
+    "footerLine2": "Wszelkie podobieństwo do prawdziwych wydarzeń jest halucynacją.",
+    "language": "Język"
   },
   "home": {
     "latest": "Najnowsze depesze",

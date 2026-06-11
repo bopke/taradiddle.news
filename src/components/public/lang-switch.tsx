@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { usePathname, useRouter } from "@/i18n/navigation";
@@ -16,12 +16,13 @@ import { cn } from "@/lib/utils";
  */
 export function LangSwitch() {
   const locale = useLocale();
+  const t = useTranslations("chrome");
   const pathname = usePathname();
   const router = useRouter();
   const params = useParams();
 
   return (
-    <div className="flex items-center gap-1" role="group" aria-label="Language">
+    <div className="flex items-center gap-1" role="group" aria-label={t("language")}>
       {routing.locales.map((l, i) => (
         <span key={l} className="flex items-center gap-1">
           {i > 0 && <span className="text-hairline">/</span>}

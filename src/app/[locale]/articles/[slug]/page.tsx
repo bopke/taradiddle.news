@@ -95,7 +95,9 @@ export default async function ArticlePage({ params }: { params: Promise<Params> 
     <main className="mx-auto max-w-[820px] p-12 max-[900px]:p-7">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        // "<" escaped so content (e.g. "</script>" in a title) can't terminate
+        // the script block. < is valid JSON, parsers are unaffected.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replaceAll("<", "\\u003c") }}
       />
       <article className="flex flex-col gap-4">
         <CategoryKicker category={article.category} />

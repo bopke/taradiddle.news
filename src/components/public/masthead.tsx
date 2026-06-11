@@ -19,7 +19,7 @@ export async function Masthead({
 
   return (
     <header>
-      <div className="flex items-center gap-[18px] border-b border-hairline px-7 py-2.5 font-sans text-[11px] tracking-[0.04em] text-ink-soft">
+      <div className="relative flex items-center gap-[18px] border-b border-hairline px-7 py-2.5 font-sans text-[11px] tracking-[0.04em] text-ink-soft">
         <span className="font-semibold uppercase tracking-[0.12em]">{today}</span>
         <div className="ml-auto flex items-center gap-4">
           <SearchBox />
@@ -39,10 +39,13 @@ export async function Masthead({
         <p className="text-base italic text-ink-soft">{t("tagline")}</p>
       </div>
 
-      <nav className="mx-7 flex justify-center border-t border-ink [border-bottom:3px_double_var(--color-ink)] max-[900px]:flex-wrap">
+      {/* `safe center` keeps the row centered when it fits and falls back to
+          flex-start when it overflows, so the first items stay reachable while
+          the row scrolls horizontally (scrollbar hidden, newspaper-style). */}
+      <nav className="mx-7 flex overflow-x-auto border-t border-ink [border-bottom:3px_double_var(--color-ink)] [justify-content:safe_center] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <Link
           href="/"
-          className="px-[22px] py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.14em] hover:text-accent"
+          className="shrink-0 whitespace-nowrap px-[22px] py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.14em] hover:text-accent"
         >
           {t("navHome")}
         </Link>
@@ -50,7 +53,7 @@ export async function Masthead({
           <Link
             key={c.id}
             href={`/category/${c.slug}`}
-            className="border-l border-hairline px-[22px] py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.14em] hover:text-accent"
+            className="shrink-0 whitespace-nowrap border-l border-hairline px-[22px] py-2.5 font-sans text-xs font-semibold uppercase tracking-[0.14em] hover:text-accent"
           >
             {c.name}
           </Link>
@@ -62,12 +65,13 @@ export async function Masthead({
 
 export async function SiteFooter() {
   const t = await getTranslations("chrome");
+  const locale = await getLocale();
   return (
     <footer className="mx-7 mt-10 flex flex-col gap-1.5 [border-top:3px_double_var(--color-ink)] pb-[34px] pt-[22px] text-center text-sm italic text-ink-soft">
       <p>{t("footerLine1")}</p>
       <p className="font-sans text-[10.5px] not-italic uppercase tracking-[0.1em]">
         {t("footerLine2")} · Taradiddle.news © {new Date().getFullYear()} ·{" "}
-        <a href="/en/feed.xml" className="underline underline-offset-2 hover:text-accent">
+        <a href={`/${locale}/feed.xml`} className="underline underline-offset-2 hover:text-accent">
           RSS
         </a>
       </p>
