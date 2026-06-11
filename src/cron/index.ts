@@ -1,23 +1,23 @@
+import { getDb } from "@/db";
+import { createAnthropicClient } from "@/lib/anthropic";
+import { runAutoGenerate } from "./auto-generate";
+import { runSelfSuggest } from "./self-suggest";
+
 /** Cron schedules registered in wrangler.jsonc. */
 export const AUTO_GENERATE_CRON = "*/15 * * * *";
 export const SELF_SUGGEST_CRON = "0 6 * * *";
 
-/**
- * Scheduled handler. Implemented in Phase 6:
- * - every 15 min: enqueue due approved topics (settings-gated)
- * - daily: AI topic self-suggestion (settings-gated)
- */
 export async function handleScheduled(
   controller: ScheduledController,
-  _env: CloudflareEnv,
+  env: CloudflareEnv,
   _ctx: ExecutionContext,
 ): Promise<void> {
   switch (controller.cron) {
     case AUTO_GENERATE_CRON:
-      console.log("auto-generate cron tick (not implemented yet)");
+      await runAutoGenerate({ db: getDb(env), queue: env.GENERATION_QUEUE });
       break;
     case SELF_SUGGEST_CRON:
-      console.log("self-suggest cron tick (not implemented yet)");
+      await runSelfSuggest({ db: getDb(env), anthropic: createAnthropicClient(env) });
       break;
     default:
       console.warn(`unknown cron schedule: ${controller.cron}`);
