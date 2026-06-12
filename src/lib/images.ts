@@ -6,6 +6,9 @@
 
 const FLUX_MODEL = "@cf/black-forest-labs/flux-1-schnell" as const;
 
+export const NO_TEXT_SUFFIX =
+  " Strictly textless photograph: no words, letters, numbers, captions, subtitles, watermarks, logos or typography anywhere in the frame; any signs, screens, labels, papers or displays that appear are completely blank.";
+
 export type ImageBindings = {
   ai: Pick<Ai, "run">;
   bucket: Pick<R2Bucket, "put">;
@@ -17,7 +20,7 @@ export async function generateHeroImage(
 ): Promise<string | null> {
   try {
     const result = await bindings.ai.run(FLUX_MODEL, {
-      prompt: opts.prompt,
+      prompt: opts.prompt + NO_TEXT_SUFFIX,
       steps: 6,
     });
 

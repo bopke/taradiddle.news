@@ -47,3 +47,13 @@ describe("generateHeroImage", () => {
     expect(await generateHeroImage(bindings, { prompt: "p", key: "k" })).toBeNull();
   });
 });
+
+describe("no-text enforcement", () => {
+  it("appends the textless suffix to every Flux prompt", async () => {
+    const { NO_TEXT_SUFFIX } = await import("./images");
+    const { bindings, run } = mockBindings(async () => ({ image: btoa("x") }));
+    await generateHeroImage(bindings, { prompt: "a podium on the moon", key: "k" });
+    const [, input] = run.mock.calls[0] as unknown as [string, { prompt: string }];
+    expect(input.prompt).toBe("a podium on the moon" + NO_TEXT_SUFFIX);
+  });
+});
