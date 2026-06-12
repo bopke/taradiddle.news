@@ -65,5 +65,17 @@ Tags are short keywords (1-3 words each), never sentences: translate each input 
       `translation to ${targetLocale} returned no parseable output (stop_reason: ${message.stop_reason})`,
     );
   }
-  return { ...message.parsed_output, slug: slugify(message.parsed_output.title) };
+
+  // Truncation guard: a model that closes body_md early produces a "valid"
+  // but drastically short translation (seen in production). Translations
+  // shrink a bit between languages, but never to a fraction — fail loudly so
+  // the job retries instead of publishing a stub.
+  const translated = message.parsed_output;
+  if (translated.body_md.length < article.bodyMd.length * 0.4) {
+    throw new Error(
+      `translation to ${targetLocale} is suspiciously short ` +
+        `(${translated.body_md.length} chars vs ${article.bodyMd.length} source) — likely truncated`,
+    );
+  }
+  return { ...translated, slug: slugify(translated.title) };
 }

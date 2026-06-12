@@ -72,3 +72,19 @@ describe("translation schema guards", () => {
     expect(keys.indexOf("tags")).toBeLessThan(keys.indexOf("body_md"));
   });
 });
+
+describe("truncation guard", () => {
+  it("rejects a drastically short body (early string-close failure mode)", async () => {
+    const longSource: ArticleSource = {
+      ...SOURCE,
+      bodyMd: "A paragraph of reasonable length for a satirical article. ".repeat(20),
+    };
+    const { client } = mockAnthropicClient(() => ({
+      ...TRANSLATED,
+      body_md: "Tylko jeden akapit.",
+    }));
+    await expect(
+      translateArticle(client, "m", { sourceLocale: "en", targetLocale: "pl", article: longSource }),
+    ).rejects.toThrow(/suspiciously short/);
+  });
+});
