@@ -23,7 +23,7 @@ const ARTICLE = {
   title: "Moon Declares Independence, Imposes Tariff on Tides",
   summary: "Lunar authorities cite centuries of unpaid gravitational labor.",
   meta_description: "The Moon has declared independence and will charge Earth for tides.",
-  body_md: "THE SEA OF TRANQUILITY — In a stunning move...\n\n> We simply want fair compensation.",
+  body_md: "THE SEA OF TRANQUILITY — In a stunning move...\n\n> We simply want fair compensation. Officials confirmed the development in a statement that careful readers described as suspiciously well-formatted, while independent observers continued to observe independently, as is tradition. Analysts expect further developments as soon as anything at all develops, and have pre-drafted reactions for every possible outcome including this exact sentence appearing in print. A follow-up committee has been formed to determine why a committee was necessary, with findings expected never.",
   tags: ["moon", "trade"],
   category_slug: "science",
   image_prompt: "photorealistic press conference podium on the lunar surface",
@@ -93,5 +93,15 @@ describe("generation schema guards", () => {
         tags: ["a full sentence that clearly is not a tag but a continuation of the article body text"],
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("generation truncation guard", () => {
+  it("rejects a stub body (unescaped-quote early close)", async () => {
+    const { client } = mockAnthropicClient(() => ({
+      ...ARTICLE,
+      body_md: "NEW YORK — In a move insiders describe as ",
+    }));
+    await expect(generateArticle(client, PROFILE, CTX)).rejects.toThrow(/suspiciously short/);
   });
 });

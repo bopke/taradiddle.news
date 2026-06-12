@@ -43,7 +43,8 @@ export async function translateArticle(
     max_tokens: 8192,
     system: `You translate satirical news articles for Taradiddle.news from "${sourceLocale}" to "${targetLocale}".
 Translate faithfully but idiomatically — the deadpan newspaper register and the jokes must land in the target language; adapt wordplay rather than translating it literally. Keep markdown structure (paragraphs, the "> " pull quote) intact. Keep fictional names as they are. meta_description stays ~155 characters. Translate image_alt when given, else return null.
-Tags are short keywords (1-3 words each), never sentences: translate each input tag in order and return exactly as many tags as you were given - nothing else goes in the tags array.`,
+Tags are short keywords (1-3 words each), never sentences: translate each input tag in order and return exactly as many tags as you were given - nothing else goes in the tags array.
+Quotation marks: use the target language's typographic quotes (e.g. „ ” for Polish, “ ” for English) — never straight ASCII double quotes (") in any text field.`,
     messages: [
       {
         role: "user",

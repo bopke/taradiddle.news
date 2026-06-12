@@ -49,6 +49,7 @@ Write one deadpan satirical news article about the topic provided. Ground rules:
 - Quote at least one fictional source. Fictional names must be clearly invented; fictional experts get absurdly specific affiliations.
 - body_md is plain markdown: short paragraphs, no headings, no images. You may include exactly one pull quote as a markdown blockquote ("> ...") if the piece earns it.
 - The dateline city, if any, is plain text at the start of the first paragraph.
+- Quotation marks: use typographic curly quotes (“ ” and ‘ ’) everywhere — never straight ASCII double quotes (") in any text field.
 - image_prompt describes a photorealistic news photo for the story (no text in image, no real people's likenesses); image_alt describes it for screen readers.
 - meta_description is for search results: ~155 characters, factual-sounding, still funny.`;
 
@@ -96,6 +97,16 @@ export async function generateArticle(
   if (!message.parsed_output) {
     throw new Error(
       `generation returned no parseable article (stop_reason: ${message.stop_reason})`,
+    );
+  }
+
+  // Truncation guard: a bare '"' inside body_md legally closes the JSON
+  // string under constrained decoding, yielding a "valid" stub article (seen
+  // in production at 284 chars). No real profile writes this little — fail
+  // loudly so the job retries instead of publishing the stub.
+  if (message.parsed_output.body_md.length < 500) {
+    throw new Error(
+      `generated body is suspiciously short (${message.parsed_output.body_md.length} chars) — likely truncated by an unescaped quote`,
     );
   }
   return message.parsed_output;

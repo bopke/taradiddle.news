@@ -13,7 +13,7 @@ const ARTICLE = {
   title: "Moon Declares Independence",
   summary: "Lunar authorities cite unpaid gravitational labor.",
   meta_description: "The Moon has declared independence.",
-  body_md: "THE SEA OF TRANQUILITY — In a stunning move...",
+  body_md: "THE SEA OF TRANQUILITY — In a stunning move... Officials confirmed the development in a statement that careful readers described as suspiciously well-formatted, while independent observers continued to observe independently, as is tradition. Analysts expect further developments as soon as anything at all develops, and have pre-drafted reactions for every possible outcome including this exact sentence appearing in print. A follow-up committee has been formed to determine why a committee was necessary, with findings expected never.",
   tags: ["moon", "trade"],
   category_slug: "science",
   image_prompt: "podium on the moon",
@@ -24,7 +24,7 @@ const TRANSLATED = {
   title: "Księżyc ogłasza niepodległość",
   summary: "Władze lunarne...",
   meta_description: "Księżyc ogłosił niepodległość.",
-  body_md: "MORZE SPOKOJU — ...",
+  body_md: "MORZE SPOKOJU — Urzędnicy potwierdzili rozwój wydarzeń w oświadczeniu, które uważni czytelnicy określili jako podejrzanie dobrze sformatowane, podczas gdy niezależni obserwatorzy nadal obserwowali niezależnie, zgodnie z tradycją. Analitycy oczekują dalszych wydarzeń, gdy tylko cokolwiek się wydarzy, i przygotowali reakcje na każdy możliwy scenariusz, łącznie z tym zdaniem.",
   image_alt: "Mównica na Księżycu",
   tags: ["księżyc", "handel"],
 };
