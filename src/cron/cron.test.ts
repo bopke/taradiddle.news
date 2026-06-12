@@ -47,6 +47,7 @@ describe("runAutoGenerate", () => {
 
   it("enqueues only due approved topics", async () => {
     await setSetting(asDb(), "auto_generate_enabled", true);
+    await setSetting(asDb(), "auto_generate_batch_size", 10); // filtering under test, not the cap
     const due = insertTopic();
     const futureDate = new Date("2026-06-12T00:00:00Z");
     insertTopic({ scheduledFor: futureDate }); // not due yet

@@ -456,7 +456,7 @@ function GenerationTab({
           >
             <div className="flex flex-col gap-3.5">
               <div className="flex gap-3.5">
-                <Field label="Auto-generate (cron, every 15 min)">
+                <Field label="Auto-generate">
                   <select name="autoGenerate" defaultValue={settings.autoGenerateEnabled ? "on" : "off"} className={fieldClass}>
                     <option value="on">Enabled</option>
                     <option value="off">Disabled</option>

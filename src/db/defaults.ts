@@ -21,7 +21,7 @@ Additionally, detect the language of the submission. If it is not English, trans
 
 export const DEFAULT_SETTINGS = {
   auto_generate_enabled: false,
-  auto_generate_batch_size: 3,
+  auto_generate_batch_size: 2,
   self_suggest_enabled: false,
   self_suggest_count: 5,
   self_suggest_hints: "",
