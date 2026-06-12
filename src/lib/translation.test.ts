@@ -45,3 +45,30 @@ describe("translateArticle", () => {
     ).rejects.toThrow(/translation to pl/);
   });
 });
+
+describe("translation schema guards", () => {
+  it("rejects sentence-length strings in tags (the tag-pollution failure mode)", async () => {
+    const { translationSchema } = await import("./translation");
+    const polluted = {
+      title: "T",
+      summary: "S",
+      meta_description: "M",
+      image_alt: null,
+      tags: [
+        "ok-tag",
+        "te — uznajmił Fitch reporterom z kuchni, której prawa własności są w tej chwili co najmniej niejasne — całe zdanie zamiast taga",
+      ],
+      body_md: "B",
+    };
+    expect(translationSchema.safeParse(polluted).success).toBe(false);
+    expect(
+      translationSchema.safeParse({ ...polluted, tags: ["ok-tag", "drugi tag"] }).success,
+    ).toBe(true);
+  });
+
+  it("lists tags before body_md in the schema (decoding-order guard)", async () => {
+    const { translationSchema } = await import("./translation");
+    const keys = Object.keys(translationSchema.shape);
+    expect(keys.indexOf("tags")).toBeLessThan(keys.indexOf("body_md"));
+  });
+});

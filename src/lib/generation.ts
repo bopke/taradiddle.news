@@ -8,13 +8,13 @@ export const articleSchema = z.object({
   summary: z.string(),
   /** ~155-char search-optimized description (distinct from the lede). */
   meta_description: z.string(),
-  body_md: z.string(),
-  tags: z.array(z.string()),
+  tags: z.array(z.string().min(1).max(60)).max(10),
   /** Chosen from the provided list; null when the topic came pre-categorized. */
   category_slug: z.string().nullable(),
   /** Prompt for the hero-image model (Flux). */
   image_prompt: z.string(),
   image_alt: z.string(),
+  body_md: z.string(),
 });
 
 export type GeneratedArticle = z.infer<typeof articleSchema>;
@@ -65,7 +65,7 @@ export function buildGenerationMessages(ctx: GenerationContext): {
   const system = `${BASE_GENERATION_PROMPT}
 
 Write in the "${ctx.primaryLocale}" locale. ${categoryRule}
-Provide 2-5 short topical tags (lowercase, in "${ctx.primaryLocale}").`;
+Provide 2-5 short topical tags (lowercase, 1-3 words each, in "${ctx.primaryLocale}") - keywords only, never sentences.`;
 
   const user = JSON.stringify({
     topic: ctx.topic.title,
