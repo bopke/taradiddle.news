@@ -4,7 +4,7 @@ import { runAutoGenerate } from "./auto-generate";
 import { runSelfSuggest } from "./self-suggest";
 
 /** Cron schedules registered in wrangler.jsonc. */
-export const AUTO_GENERATE_CRON = "*/15 * * * *";
+export const AUTO_GENERATE_CRON = "0 */4 * * *";
 export const SELF_SUGGEST_CRON = "0 6 * * *";
 
 export async function handleScheduled(

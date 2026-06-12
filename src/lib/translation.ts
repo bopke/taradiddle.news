@@ -3,14 +3,14 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { slugify } from "./slugs";
 
-const translationSchema = z.object({
+export const translationSchema = z.object({
   title: z.string(),
   summary: z.string(),
   meta_description: z.string(),
-  body_md: z.string(),
   image_alt: z.string().nullable(),
   /** Translated tag names, same order as the input list. */
-  tags: z.array(z.string()),
+  tags: z.array(z.string().min(1).max(60)).max(10),
+  body_md: z.string(),
 });
 
 export type ArticleSource = {
@@ -42,7 +42,8 @@ export async function translateArticle(
     model,
     max_tokens: 8192,
     system: `You translate satirical news articles for Taradiddle.news from "${sourceLocale}" to "${targetLocale}".
-Translate faithfully but idiomatically — the deadpan newspaper register and the jokes must land in the target language; adapt wordplay rather than translating it literally. Keep markdown structure (paragraphs, the "> " pull quote) intact. Keep fictional names as they are. meta_description stays ~155 characters. Translate each tag in order. Translate image_alt when given, else return null.`,
+Translate faithfully but idiomatically — the deadpan newspaper register and the jokes must land in the target language; adapt wordplay rather than translating it literally. Keep markdown structure (paragraphs, the "> " pull quote) intact. Keep fictional names as they are. meta_description stays ~155 characters. Translate image_alt when given, else return null.
+Tags are short keywords (1-3 words each), never sentences: translate each input tag in order and return exactly as many tags as you were given - nothing else goes in the tags array.`,
     messages: [
       {
         role: "user",

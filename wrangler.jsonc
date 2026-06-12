@@ -49,7 +49,9 @@
   },
   "triggers": {
     "crons": [
-      "*/15 * * * *",
+      // Generate articles
+      "0 */4 * * *",
+      // Daily topic self-suggestion
       "0 6 * * *"
     ]
   },

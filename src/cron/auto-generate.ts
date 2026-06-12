@@ -5,9 +5,10 @@ import { getSettings } from "@/lib/settings";
 import { enqueueGeneration, type GenerationQueue } from "@/queue/producer";
 
 /**
- * 15-minute sweep: when enabled, picks due approved topics — highest priority
- * first, oldest first within a priority — up to the per-run cap, and enqueues
- * them for generation.
+ * Auto-generate: when enabled, picks due approved
+ * topics — highest priority first, oldest first within a priority — up to the
+ * per-run cap and enqueues them
+ * for generation.
  */
 export async function runAutoGenerate(
   deps: { db: AuthDb; queue: GenerationQueue },

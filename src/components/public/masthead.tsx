@@ -73,6 +73,14 @@ export async function SiteFooter() {
         {t("footerLine2")} · Taradiddle.news © {new Date().getFullYear()} ·{" "}
         <a href={`/${locale}/feed.xml`} className="underline underline-offset-2 hover:text-accent">
           RSS
+        </a>{" "}
+        ·{" "}
+        <a
+          href="https://bopke.dev/"
+          rel="author"
+          className="underline underline-offset-2 hover:text-accent"
+        >
+          bopke.dev
         </a>
       </p>
     </footer>

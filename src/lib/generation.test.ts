@@ -70,3 +70,28 @@ describe("generateArticle", () => {
     await expect(generateArticle(client, PROFILE, CTX)).rejects.toThrow(/no parseable article/);
   });
 });
+
+describe("generation schema guards", () => {
+  it("rejects sentence-length tags and lists tags before body_md", async () => {
+    const { articleSchema } = await import("./generation");
+    const keys = Object.keys(articleSchema.shape);
+    expect(keys.indexOf("tags")).toBeLessThan(keys.indexOf("body_md"));
+
+    const base = {
+      title: "T",
+      summary: "S",
+      meta_description: "M",
+      category_slug: null,
+      image_prompt: "p",
+      image_alt: "a",
+      body_md: "B",
+    };
+    expect(articleSchema.safeParse({ ...base, tags: ["moon", "trade"] }).success).toBe(true);
+    expect(
+      articleSchema.safeParse({
+        ...base,
+        tags: ["a full sentence that clearly is not a tag but a continuation of the article body text"],
+      }).success,
+    ).toBe(false);
+  });
+});
