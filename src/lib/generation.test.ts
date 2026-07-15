@@ -32,51 +32,63 @@ const ARTICLE = {
 
 describe("generateArticle", () => {
   it("returns the parsed article and sends profile params", async () => {
-    const { client, parseMock } = mockAnthropicClient(() => ARTICLE);
+    const { client, createMock } = mockAnthropicClient(() => ARTICLE);
     const article = await generateArticle(client, PROFILE, CTX);
 
     expect(article).toEqual(ARTICLE);
-    const call: ParseCall = parseMock.mock.calls[0][0];
+    const call: ParseCall = createMock.mock.calls[0][0];
     expect(call.model).toBe("claude-sonnet-4-6");
     expect(call.max_tokens).toBe(4096);
     expect(call.system).toContain("Taradiddle.news");
+    expect(call.system).toContain("---BODY---");
     expect(call.system).toContain("Keep articles between 350 and 550 words.");
     expect(call.messages[0].content).toContain("Moon Declares Independence");
   });
 
+  it("survives straight quotes and delimiters-adjacent markdown in the body", async () => {
+    const body =
+      'NEW YORK — "This is fine," said a spokesperson for the Department of "Air Quotes", ' +
+      'adding "no further comment" before commenting further at length. '.repeat(12);
+    const { client } = mockAnthropicClient(() => ({ ...ARTICLE, body_md: body }));
+    const article = await generateArticle(client, PROFILE, CTX);
+    expect(article.body_md).toBe(body.trim());
+  });
+
   it("omits temperature when the profile has none", async () => {
-    const { client, parseMock } = mockAnthropicClient(() => ARTICLE);
+    const { client, createMock } = mockAnthropicClient(() => ARTICLE);
     await generateArticle(client, PROFILE, CTX);
-    expect("temperature" in parseMock.mock.calls[0][0]).toBe(false);
+    expect("temperature" in createMock.mock.calls[0][0]).toBe(false);
   });
 
   it("sends temperature when the profile sets one", async () => {
-    const { client, parseMock } = mockAnthropicClient(() => ARTICLE);
+    const { client, createMock } = mockAnthropicClient(() => ARTICLE);
     await generateArticle(client, { ...PROFILE, temperature: 0.9 }, CTX);
-    expect(parseMock.mock.calls[0][0].temperature).toBe(0.9);
+    expect(createMock.mock.calls[0][0].temperature).toBe(0.9);
   });
 
   it("offers categories when unassigned and forbids picking when assigned", async () => {
-    const { client, parseMock } = mockAnthropicClient(() => ARTICLE);
+    const { client, createMock } = mockAnthropicClient(() => ARTICLE);
     await generateArticle(client, PROFILE, CTX);
-    expect(parseMock.mock.calls[0][0].system).toContain('"science" (Science)');
+    expect(createMock.mock.calls[0][0].system).toContain('"science" (Science)');
 
     await generateArticle(client, PROFILE, { ...CTX, categoryAssigned: true, categories: [] });
-    expect(parseMock.mock.calls[1][0].system).toContain("already assigned");
+    expect(createMock.mock.calls[1][0].system).toContain("already assigned");
   });
 
-  it("throws when no parseable output comes back", async () => {
+  it("throws when the response has no text", async () => {
     const { client } = mockAnthropicClient(() => null);
-    await expect(generateArticle(client, PROFILE, CTX)).rejects.toThrow(/no parseable article/);
+    await expect(generateArticle(client, PROFILE, CTX)).rejects.toThrow(/no text output/);
+  });
+
+  it("throws when the response is missing the body delimiter", async () => {
+    const { client } = mockAnthropicClient(() => '{"title": "T"}');
+    await expect(generateArticle(client, PROFILE, CTX)).rejects.toThrow(/missing the ---BODY---/);
   });
 });
 
 describe("generation schema guards", () => {
-  it("rejects sentence-length tags and lists tags before body_md", async () => {
-    const { articleSchema } = await import("./generation");
-    const keys = Object.keys(articleSchema.shape);
-    expect(keys.indexOf("tags")).toBeLessThan(keys.indexOf("body_md"));
-
+  it("rejects sentence-length tags", async () => {
+    const { articleMetaSchema } = await import("./generation");
     const base = {
       title: "T",
       summary: "S",
@@ -84,11 +96,10 @@ describe("generation schema guards", () => {
       category_slug: null,
       image_prompt: "p",
       image_alt: "a",
-      body_md: "B",
     };
-    expect(articleSchema.safeParse({ ...base, tags: ["moon", "trade"] }).success).toBe(true);
+    expect(articleMetaSchema.safeParse({ ...base, tags: ["moon", "trade"] }).success).toBe(true);
     expect(
-      articleSchema.safeParse({
+      articleMetaSchema.safeParse({
         ...base,
         tags: ["a full sentence that clearly is not a tag but a continuation of the article body text"],
       }).success,
@@ -97,10 +108,10 @@ describe("generation schema guards", () => {
 });
 
 describe("generation truncation guard", () => {
-  it("rejects a stub body (unescaped-quote early close)", async () => {
+  it("rejects a stub body", async () => {
     const { client } = mockAnthropicClient(() => ({
       ...ARTICLE,
-      body_md: "NEW YORK — In a move insiders describe as ",
+      body_md: "NEW YORK — In a move insiders describe as brief.",
     }));
     await expect(generateArticle(client, PROFILE, CTX)).rejects.toThrow(/suspiciously short/);
   });

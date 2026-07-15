@@ -1,23 +1,26 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
+import { extractText, formatInstructions, parseDelimitedResponse } from "./ai-output";
 
-export const articleSchema = z.object({
-  title: z.string(),
+/**
+ * Metadata fields only — body_md arrives after the ---BODY--- delimiter as
+ * plain markdown, outside the JSON (see ai-output.ts for why).
+ */
+export const articleMetaSchema = z.object({
+  title: z.string().min(1),
   /** Human-facing lede, 1–2 sentences. */
-  summary: z.string(),
+  summary: z.string().min(1),
   /** ~155-char search-optimized description (distinct from the lede). */
-  meta_description: z.string(),
+  meta_description: z.string().min(1),
   tags: z.array(z.string().min(1).max(60)).max(10),
   /** Chosen from the provided list; null when the topic came pre-categorized. */
   category_slug: z.string().nullable(),
   /** Prompt for the hero-image model (Flux). */
-  image_prompt: z.string(),
-  image_alt: z.string(),
-  body_md: z.string(),
+  image_prompt: z.string().min(1),
+  image_alt: z.string().min(1),
 });
 
-export type GeneratedArticle = z.infer<typeof articleSchema>;
+export type GeneratedArticle = z.infer<typeof articleMetaSchema> & { body_md: string };
 
 /** The subset of a generation_profiles row the generator needs. */
 export type GenerationProfileInput = {
@@ -47,9 +50,9 @@ Write one deadpan satirical news article about the topic provided. Ground rules:
 - Obviously untrue means obviously: never write plausible misinformation. A reader skimming the headline alone must be in on the joke.
 - Punch up or sideways: institutions, industries, technology, public figures in their public roles, everyday absurdity. Never mock private individuals, tragedies, or vulnerable groups.
 - Quote at least one fictional source. Fictional names must be clearly invented; fictional experts get absurdly specific affiliations.
-- body_md is plain markdown: short paragraphs, no headings, no images. You may include exactly one pull quote as a markdown blockquote ("> ...") if the piece earns it.
+- The body is plain markdown: short paragraphs, no headings, no images. You may include exactly one pull quote as a markdown blockquote ("> ...") if the piece earns it.
 - The dateline city, if any, is plain text at the start of the first paragraph.
-- Quotation marks: use typographic curly quotes (“ ” and ‘ ’) everywhere — never straight ASCII double quotes (") in any text field.
+- Quotation marks: prefer typographic curly quotes (“ ” and ‘ ’) over straight ASCII quotes.
 - image_prompt describes a photorealistic news photo for the story (no text in image, no real people's likenesses); image_alt describes it for screen readers.
 - meta_description is for search results: ~155 characters, factual-sounding, still funny.`;
 
@@ -66,7 +69,11 @@ export function buildGenerationMessages(ctx: GenerationContext): {
   const system = `${BASE_GENERATION_PROMPT}
 
 Write in the "${ctx.primaryLocale}" locale. ${categoryRule}
-Provide 2-5 short topical tags (lowercase, 1-3 words each, in "${ctx.primaryLocale}") - keywords only, never sentences.`;
+tags are 2-5 short topical keywords (lowercase, 1-3 words each, in "${ctx.primaryLocale}") - never sentences.
+
+${formatInstructions(
+    "title, summary, meta_description, tags, category_slug, image_prompt, image_alt",
+  )}`;
 
   const user = JSON.stringify({
     topic: ctx.topic.title,
@@ -83,7 +90,7 @@ export async function generateArticle(
 ): Promise<GeneratedArticle> {
   const { system, user } = buildGenerationMessages(ctx);
 
-  const message = await client.messages.parse({
+  const message = await client.messages.create({
     model: profile.model,
     max_tokens: profile.maxOutputTokens,
     // Omitted when null: profiles default to the model's own sampling, and
@@ -91,23 +98,14 @@ export async function generateArticle(
     ...(profile.temperature !== null ? { temperature: profile.temperature } : {}),
     system: profile.instructions ? `${system}\n\n${profile.instructions}` : system,
     messages: [{ role: "user", content: user }],
-    output_config: { format: zodOutputFormat(articleSchema) },
   });
 
-  if (!message.parsed_output) {
-    throw new Error(
-      `generation returned no parseable article (stop_reason: ${message.stop_reason})`,
-    );
-  }
+  const text = extractText(message, "generation");
+  const { meta, body } = parseDelimitedResponse(articleMetaSchema, text, "generation");
 
-  // Truncation guard: a bare '"' inside body_md legally closes the JSON
-  // string under constrained decoding, yielding a "valid" stub article (seen
-  // in production at 284 chars). No real profile writes this little — fail
-  // loudly so the job retries instead of publishing the stub.
-  if (message.parsed_output.body_md.length < 500) {
-    throw new Error(
-      `generated body is suspiciously short (${message.parsed_output.body_md.length} chars) — likely truncated by an unescaped quote`,
-    );
+  // Backstop for degenerate output: no real profile writes this little.
+  if (body.length < 500) {
+    throw new Error(`generated body is suspiciously short (${body.length} chars)`);
   }
-  return message.parsed_output;
+  return { ...meta, body_md: body };
 }

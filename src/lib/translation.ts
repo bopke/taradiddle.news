@@ -1,16 +1,19 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
+import { BODY_DELIMITER, extractText, formatInstructions, parseDelimitedResponse } from "./ai-output";
 import { slugify } from "./slugs";
 
-export const translationSchema = z.object({
-  title: z.string(),
-  summary: z.string(),
-  meta_description: z.string(),
+/**
+ * Metadata fields only — body_md arrives after the ---BODY--- delimiter as
+ * plain markdown, outside the JSON (see ai-output.ts for why).
+ */
+export const translationMetaSchema = z.object({
+  title: z.string().min(1),
+  summary: z.string().min(1),
+  meta_description: z.string().min(1),
   image_alt: z.string().nullable(),
   /** Translated tag names, same order as the input list. */
   tags: z.array(z.string().min(1).max(60)).max(10),
-  body_md: z.string(),
 });
 
 export type ArticleSource = {
@@ -22,7 +25,8 @@ export type ArticleSource = {
   tags: string[];
 };
 
-export type TranslatedArticle = z.infer<typeof translationSchema> & {
+export type TranslatedArticle = z.infer<typeof translationMetaSchema> & {
+  body_md: string;
   /** Derived locally from the translated title (deterministic). */
   slug: string;
 };
@@ -37,46 +41,46 @@ export async function translateArticle(
   },
 ): Promise<TranslatedArticle> {
   const { sourceLocale, targetLocale, article } = opts;
+  const label = `translation to ${targetLocale}`;
 
-  const message = await client.messages.parse({
+  // The source travels in the same shape the response must use: metadata
+  // JSON, delimiter, then the body as plain markdown.
+  const sourceMeta = JSON.stringify({
+    title: article.title,
+    summary: article.summary,
+    meta_description: article.metaDescription,
+    image_alt: article.imageAlt,
+    tags: article.tags,
+  });
+
+  const message = await client.messages.create({
     model,
     max_tokens: 8192,
     system: `You translate satirical news articles for Taradiddle.news from "${sourceLocale}" to "${targetLocale}".
-Translate faithfully but idiomatically — the deadpan newspaper register and the jokes must land in the target language; adapt wordplay rather than translating it literally. Keep markdown structure (paragraphs, the "> " pull quote) intact. Keep fictional names as they are. meta_description stays ~155 characters. Translate image_alt when given, else return null.
+Translate faithfully but idiomatically — the deadpan newspaper register and the jokes must land in the target language; adapt wordplay rather than translating it literally. Translate the body in full — every paragraph, never a summary. Keep markdown structure (paragraphs, the "> " pull quote) intact. Keep fictional names as they are. meta_description stays ~155 characters. Translate image_alt when given, else return null.
 Tags are short keywords (1-3 words each), never sentences: translate each input tag in order and return exactly as many tags as you were given - nothing else goes in the tags array.
-Quotation marks: use the target language's typographic quotes (e.g. „ ” for Polish, “ ” for English) — never straight ASCII double quotes (") in any text field.`,
+Quotation marks: prefer the target language's typographic quotes (e.g. „ ” for Polish, “ ” for English).
+
+The input uses the same format as your response.
+${formatInstructions("title, summary, meta_description, image_alt, tags")}`,
     messages: [
       {
         role: "user",
-        content: JSON.stringify({
-          title: article.title,
-          summary: article.summary,
-          meta_description: article.metaDescription,
-          body_md: article.bodyMd,
-          image_alt: article.imageAlt,
-          tags: article.tags,
-        }),
+        content: `${sourceMeta}\n${BODY_DELIMITER}\n${article.bodyMd}`,
       },
     ],
-    output_config: { format: zodOutputFormat(translationSchema) },
   });
 
-  if (!message.parsed_output) {
-    throw new Error(
-      `translation to ${targetLocale} returned no parseable output (stop_reason: ${message.stop_reason})`,
-    );
-  }
+  const text = extractText(message, label);
+  const { meta, body } = parseDelimitedResponse(translationMetaSchema, text, label);
 
-  // Truncation guard: a model that closes body_md early produces a "valid"
-  // but drastically short translation (seen in production). Translations
-  // shrink a bit between languages, but never to a fraction — fail loudly so
-  // the job retries instead of publishing a stub.
-  const translated = message.parsed_output;
-  if (translated.body_md.length < article.bodyMd.length * 0.4) {
+  // Translations shrink a bit between languages, but never to a fraction —
+  // fail loudly so the job retries instead of publishing a stub.
+  if (body.length < article.bodyMd.length * 0.4) {
     throw new Error(
-      `translation to ${targetLocale} is suspiciously short ` +
-        `(${translated.body_md.length} chars vs ${article.bodyMd.length} source) — likely truncated`,
+      `${label} is suspiciously short ` +
+        `(${body.length} chars vs ${article.bodyMd.length} source) — likely truncated`,
     );
   }
-  return { ...translated, slug: slugify(translated.title) };
+  return { ...meta, body_md: body, slug: slugify(meta.title) };
 }

@@ -38,7 +38,7 @@ function makeDeps(opts?: {
   translate?: (call: ParseCall) => unknown;
   imageFails?: boolean;
 }) {
-  const { client, parseMock } = mockAnthropicClient((call) =>
+  const { client, createMock } = mockAnthropicClient((call) =>
     call.system.includes("You translate")
       ? (opts?.translate ?? (() => TRANSLATED))(call)
       : (opts?.generate ?? (() => ARTICLE))(call),
@@ -52,7 +52,7 @@ function makeDeps(opts?: {
     anthropic: client,
     images: { ai: { run }, bucket: { put } } as unknown as ImageBindings,
   };
-  return { deps, parseMock, put, run };
+  return { deps, createMock, put, run };
 }
 
 function makeQueue() {
@@ -254,11 +254,11 @@ describe("consumer — generate", () => {
     const topic = insertTopic({ categoryId: second.id });
     const { queue, sent } = makeQueue();
     await enqueueGeneration(asDb(), queue, [topic.id], "manual");
-    const { deps, parseMock } = makeDeps();
+    const { deps, createMock } = makeDeps();
     await consumeMessage(deps, makeMessage(sent[0]));
 
     expect(db.select().from(schema.articles).all()[0].categoryId).toBe(second.id);
-    const generationCall = parseMock.mock.calls
+    const generationCall = createMock.mock.calls
       .map((c) => c[0] as ParseCall)
       .find((c) => !c.system.includes("You translate"))!;
     expect(generationCall.system).toContain("already assigned");
