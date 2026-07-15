@@ -1,6 +1,12 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
-import { BODY_DELIMITER, extractText, formatInstructions, parseDelimitedResponse } from "./ai-output";
+import {
+  BODY_DELIMITER,
+  extractText,
+  formatInstructions,
+  parseDelimitedResponse,
+  serializeFields,
+} from "./ai-output";
 import { slugify } from "./slugs";
 
 /**
@@ -43,9 +49,9 @@ export async function translateArticle(
   const { sourceLocale, targetLocale, article } = opts;
   const label = `translation to ${targetLocale}`;
 
-  // The source travels in the same shape the response must use: metadata
-  // JSON, delimiter, then the body as plain markdown.
-  const sourceMeta = JSON.stringify({
+  // The source travels in the same shape the response must use: `key: value`
+  // metadata lines, delimiter, then the body as plain markdown.
+  const sourceMeta = serializeFields({
     title: article.title,
     summary: article.summary,
     meta_description: article.metaDescription,
@@ -62,7 +68,11 @@ Tags are short keywords (1-3 words each), never sentences: translate each input 
 Quotation marks: prefer the target language's typographic quotes (e.g. „ ” for Polish, “ ” for English).
 
 The input uses the same format as your response.
-${formatInstructions("title, summary, meta_description, image_alt, tags")}`,
+${formatInstructions(`title: <translated headline>
+summary: <translated, one line>
+meta_description: <translated, ~155 characters, one line>
+image_alt: <translated, or null when the input was null>
+tags: <the translated tags separated by " | ", same count and order as the input>`)}`,
     messages: [
       {
         role: "user",

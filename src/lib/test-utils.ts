@@ -1,6 +1,6 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { vi, type Mock } from "vitest";
-import { BODY_DELIMITER } from "./ai-output";
+import { BODY_DELIMITER, serializeFields } from "./ai-output";
 
 export type ParseCall = {
   model: string;
@@ -16,9 +16,10 @@ export type ParseCall = {
  * - `messages.parse` (moderation, suggestions) resolves with whatever
  *   `impl` returns as `parsed_output`.
  * - `messages.create` (generation, translation) serializes the returned
- *   object into the delimited wire format — metadata JSON, ---BODY---,
- *   then `body_md` — so tests exercise the real response parser. Return
- *   a string to send raw text instead, or null for an empty response.
+ *   object into the delimited wire format — `key: value` metadata lines,
+ *   ---BODY---, then `body_md` — so tests exercise the real response
+ *   parser. Return a string to send raw text instead, or null for an
+ *   empty response.
  *
  * Inspect `parseMock.mock.calls` / `createMock.mock.calls` for request params.
  */
@@ -36,7 +37,7 @@ export function mockAnthropicClient(
       typeof result === "string"
         ? result
         : (({ body_md, ...meta }) =>
-            `${JSON.stringify(meta)}\n${BODY_DELIMITER}\n${String(body_md ?? "")}`)(
+            `${serializeFields(meta as Record<string, string | string[] | null>)}\n${BODY_DELIMITER}\n${String(body_md ?? "")}`)(
             result as Record<string, unknown>,
           );
     return { content: [{ type: "text", text }], stop_reason: "end_turn" };

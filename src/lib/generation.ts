@@ -71,9 +71,13 @@ export function buildGenerationMessages(ctx: GenerationContext): {
 Write in the "${ctx.primaryLocale}" locale. ${categoryRule}
 tags are 2-5 short topical keywords (lowercase, 1-3 words each, in "${ctx.primaryLocale}") - never sentences.
 
-${formatInstructions(
-    "title, summary, meta_description, tags, category_slug, image_prompt, image_alt",
-  )}`;
+${formatInstructions(`title: <the headline>
+summary: <the 1-2 sentence lede, one line>
+meta_description: <~155 characters, one line>
+tags: <the tags separated by " | ">
+category_slug: <the chosen slug, or null>
+image_prompt: <one line>
+image_alt: <one line>`)}`;
 
   const user = JSON.stringify({
     topic: ctx.topic.title,
