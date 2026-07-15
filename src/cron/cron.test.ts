@@ -69,6 +69,20 @@ describe("runAutoGenerate", () => {
     expect(db.select().from(schema.generationJobs).all()).toHaveLength(2);
   });
 
+  it("falls back to suggested topics only when no approved topic is due", async () => {
+    await setSetting(asDb(), "auto_generate_enabled", true);
+    await setSetting(asDb(), "auto_generate_batch_size", 1);
+    const older = insertTopic({ status: "suggested", createdAt: new Date("2026-06-01T00:00:00Z") });
+    insertTopic({ status: "suggested", createdAt: new Date("2026-06-05T00:00:00Z") });
+    insertTopic({ status: "done" });
+
+    const { queue, sent } = makeQueue();
+    const result = await runAutoGenerate({ db: asDb(), queue }, NOW);
+
+    expect(result.enqueued).toBe(1);
+    expect(sent[0]).toMatchObject({ kind: "generate", topicId: older.id, trigger: "cron" });
+  });
+
   it("respects the batch cap, ordering by priority then age", async () => {
     await setSetting(asDb(), "auto_generate_enabled", true);
     await setSetting(asDb(), "auto_generate_batch_size", 2);
