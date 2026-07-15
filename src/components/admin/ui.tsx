@@ -22,6 +22,8 @@ export const STATUS_META: Record<string, { label: string; tone: PillTone }> = {
   done: { label: "Done", tone: "green" },
   rejected: { label: "Rejected", tone: "gray" },
   failed: { label: "Failed", tone: "red" },
+  /** A failed job whose topic was later regenerated successfully. */
+  resolved: { label: "Failed · rerun ok", tone: "gray" },
   running: { label: "Running", tone: "amber" },
   succeeded: { label: "Succeeded", tone: "green" },
   published: { label: "Published", tone: "green" },

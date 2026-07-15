@@ -1,5 +1,4 @@
-import { desc, eq } from "drizzle-orm";
-import * as schema from "@/db/schema";
+import { listJobs } from "@/lib/admin/jobs";
 import { getRequestContext } from "@/lib/request-context";
 import {
   adminBtnClass,
@@ -19,12 +18,7 @@ export const metadata = { title: "Generation jobs — Taradiddle Admin" };
 
 export default async function JobsPage() {
   const { db } = await getRequestContext();
-  const jobs = await db
-    .select({ job: schema.generationJobs, topicTitle: schema.topics.title })
-    .from(schema.generationJobs)
-    .leftJoin(schema.topics, eq(schema.generationJobs.topicId, schema.topics.id))
-    .orderBy(desc(schema.generationJobs.createdAt))
-    .limit(200);
+  const jobs = await listJobs(db, 200);
 
   return (
     <>
@@ -53,7 +47,7 @@ export default async function JobsPage() {
                 </td>
               </tr>
             )}
-            {jobs.map(({ job, topicTitle }) => (
+            {jobs.map(({ job, topicTitle, resolved }) => (
               <tr key={job.id} className="last:[&>td]:border-b-0">
                 <td className={cn(tdClass, "font-mono text-[11.5px] text-admin-ink-dim")}>
                   job-{job.id}
@@ -72,10 +66,10 @@ export default async function JobsPage() {
                   {formatDateTime(job.startedAt)}
                 </td>
                 <td className={tdClass}>
-                  <StatusPill status={job.status} />
+                  <StatusPill status={resolved ? "resolved" : job.status} />
                 </td>
                 <td className={cn(tdClass, "text-right")}>
-                  {job.status === "failed" && job.topicId && (
+                  {job.status === "failed" && !resolved && job.topicId && (
                     <form action={retryJobAction}>
                       <input type="hidden" name="topicId" value={job.topicId} />
                       <button className={adminBtnClass({ kind: "accent", small: true })}>Retry</button>

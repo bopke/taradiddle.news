@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { count, desc, eq, inArray } from "drizzle-orm";
 import * as schema from "@/db/schema";
+import { countUnresolvedFailedJobs, listJobs } from "@/lib/admin/jobs";
 import { getRequestContext } from "@/lib/request-context";
 import {
   adminBtnClass,
@@ -34,23 +35,12 @@ export default async function AdminDashboardPage() {
       .select({ total: count() })
       .from(schema.topics)
       .where(inArray(schema.topics.status, ["queued", "generating"])),
-    db
-      .select({ total: count() })
-      .from(schema.generationJobs)
-      .where(eq(schema.generationJobs.status, "failed")),
+    countUnresolvedFailedJobs(db),
     db
       .select({ total: count() })
       .from(schema.articles)
       .where(eq(schema.articles.status, "published")),
-    db
-      .select({
-        job: schema.generationJobs,
-        topicTitle: schema.topics.title,
-      })
-      .from(schema.generationJobs)
-      .leftJoin(schema.topics, eq(schema.generationJobs.topicId, schema.topics.id))
-      .orderBy(desc(schema.generationJobs.createdAt))
-      .limit(5),
+    listJobs(db, 5),
   ]);
 
   const today = new Date().toLocaleDateString("en-US", {
@@ -65,9 +55,9 @@ export default async function AdminDashboardPage() {
     { label: "Queue depth", value: inQueue[0].total, href: "/admin/jobs" },
     {
       label: "Recent failures",
-      value: failures[0].total,
+      value: failures,
       href: "/admin/jobs",
-      alert: failures[0].total > 0,
+      alert: failures > 0,
     },
     { label: "Published articles", value: published[0].total, href: "/admin/articles" },
   ];
@@ -162,7 +152,7 @@ export default async function AdminDashboardPage() {
                   <td className={cn(tdClass, "text-admin-ink-dim")}>No jobs yet.</td>
                 </tr>
               )}
-              {recentJobs.map(({ job, topicTitle }) => (
+              {recentJobs.map(({ job, topicTitle, resolved }) => (
                 <tr key={job.id} className="last:[&>td]:border-b-0">
                   <td className={tdClass}>
                     <CellTitle>{topicTitle ?? "(topic deleted)"}</CellTitle>
@@ -171,7 +161,7 @@ export default async function AdminDashboardPage() {
                     </CellMeta>
                   </td>
                   <td className={cn(tdClass, "text-right")}>
-                    <StatusPill status={job.status} />
+                    <StatusPill status={resolved ? "resolved" : job.status} />
                   </td>
                 </tr>
               ))}

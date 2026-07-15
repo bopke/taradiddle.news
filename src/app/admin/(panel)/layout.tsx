@@ -1,6 +1,7 @@
 import { count, eq } from "drizzle-orm";
 import * as schema from "@/db/schema";
 import { requireAdmin } from "@/lib/admin-session";
+import { countUnresolvedFailedJobs } from "@/lib/admin/jobs";
 import { getRequestContext } from "@/lib/request-context";
 import { AdminSidebar } from "@/components/admin/sidebar";
 
@@ -16,12 +17,9 @@ export default async function AdminPanelLayout({
   const user = await requireAdmin();
   const { db } = await getRequestContext();
 
-  const [[suggested], [failedJobs]] = await Promise.all([
+  const [[suggested], failedJobsCount] = await Promise.all([
     db.select({ total: count() }).from(schema.topics).where(eq(schema.topics.status, "suggested")),
-    db
-      .select({ total: count() })
-      .from(schema.generationJobs)
-      .where(eq(schema.generationJobs.status, "failed")),
+    countUnresolvedFailedJobs(db),
   ]);
 
   return (
@@ -29,7 +27,7 @@ export default async function AdminPanelLayout({
       <AdminSidebar
         userEmail={user.email}
         suggestedCount={suggested.total}
-        failedJobsCount={failedJobs.total}
+        failedJobsCount={failedJobsCount}
       />
       <div className="min-w-0 flex-1">
         <div className="max-w-[1200px] px-7 pb-12 pt-6">{children}</div>
