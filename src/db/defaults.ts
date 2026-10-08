@@ -49,7 +49,7 @@ export type SettingsShape = {
 
 export const DEFAULT_PROFILE = {
   name: "House style",
-  model: "claude-sonnet-4-6",
+  model: "claude-sonnet-5-5",
   temperature: null,
   maxOutputTokens: 4096,
   instructions:

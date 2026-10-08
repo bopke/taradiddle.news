@@ -68,14 +68,14 @@ type SettingsValues = {
   defaultLocale: string;
 };
 
-const MODEL_OPTIONS = ["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-8"];
-
 export function SettingsScreen(props: {
   admins: AdminEntry[];
   apiKeys: ApiKeyEntry[];
   categories: CategoryEntry[];
   profiles: ProfileEntry[];
   settings: SettingsValues;
+  modelOptions: string[];
+  defaultModel: string;
 }) {
   const [tab, setTab] = useState<Tab>("Generation");
 
@@ -100,7 +100,12 @@ export function SettingsScreen(props: {
       {tab === "Admins" && <AdminsTab admins={props.admins} />}
       {tab === "API keys" && <ApiKeysTab apiKeys={props.apiKeys} />}
       {tab === "Categories" && <CategoriesTab categories={props.categories} locales={props.settings.locales} />}
-      {tab === "Generation" && <GenerationTab profiles={props.profiles} settings={props.settings} />}
+      {tab === "Generation" && <GenerationTab
+          profiles={props.profiles}
+          settings={props.settings}
+          modelOptions={props.modelOptions}
+          defaultModel={props.defaultModel}
+        />}
     </>
   );
 }
@@ -437,13 +442,17 @@ function CategoryDialog({
 function GenerationTab({
   profiles,
   settings,
+  modelOptions,
+  defaultModel,
 }: {
   profiles: ProfileEntry[];
   settings: SettingsValues;
+  modelOptions: string[];
+  defaultModel: string;
 }) {
   return (
     <>
-      <ProfilesPanel profiles={profiles} />
+      <ProfilesPanel profiles={profiles} modelOptions={modelOptions} defaultModel={defaultModel} />
       <div className="grid grid-cols-2 items-start gap-4 max-[980px]:grid-cols-1">
         <form action={savePipelineSettingsAction}>
           <Panel
@@ -516,7 +525,7 @@ function GenerationTab({
                 </Field>
                 <Field label="Model">
                   <select name="moderationModel" defaultValue={settings.moderationModel} className={fieldClass}>
-                    {MODEL_OPTIONS.map((m) => (
+                    {modelOptions.map((m) => (
                       <option key={m}>{m}</option>
                     ))}
                   </select>
@@ -536,7 +545,15 @@ function GenerationTab({
   );
 }
 
-function ProfilesPanel({ profiles }: { profiles: ProfileEntry[] }) {
+function ProfilesPanel({
+  profiles,
+  modelOptions,
+  defaultModel,
+}: {
+  profiles: ProfileEntry[];
+  modelOptions: string[];
+  defaultModel: string;
+}) {
   const [selectedId, setSelectedId] = useState<number | "new">(profiles[0]?.id ?? "new");
   const selected = selectedId === "new" ? null : profiles.find((p) => p.id === selectedId) ?? null;
   const [state, formAction, pending] = useActionState(
@@ -590,15 +607,15 @@ function ProfilesPanel({ profiles }: { profiles: ProfileEntry[] }) {
               <input name="name" defaultValue={selected?.name ?? ""} required placeholder="e.g. Long-form opinion" className={fieldClass} />
             </Field>
             <Field label="Model">
-              <select name="model" defaultValue={selected?.model ?? "claude-sonnet-4-6"} className={fieldClass}>
-                {MODEL_OPTIONS.map((m) => (
+              <select name="model" defaultValue={selected?.model ?? defaultModel} className={fieldClass}>
+                {modelOptions.map((m) => (
                   <option key={m}>{m}</option>
                 ))}
               </select>
             </Field>
           </div>
           <div className="flex gap-3.5">
-            <Field label="Temperature" hint="Leave empty for the model default (required for Opus 4.7+).">
+            <Field label="Temperature" hint="Leave empty for the model default (required for Opus 4.7+, Sonnet 5+ and newer).">
               <input
                 name="temperature"
                 type="number"

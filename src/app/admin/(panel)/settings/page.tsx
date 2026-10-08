@@ -3,14 +3,19 @@ import * as schema from "@/db/schema";
 import { getRequestContext } from "@/lib/request-context";
 import { requireAdmin } from "@/lib/admin-session";
 import { getSettings } from "@/lib/settings";
+import { createAnthropicClient } from "@/lib/anthropic";
+import { FALLBACK_MODELS, listClaudeModels, newestOfLine } from "@/lib/models";
 import { SettingsScreen } from "./settings-screen";
 
 export const metadata = { title: "Settings — Taradiddle Admin" };
 
 export default async function SettingsPage() {
   const user = await requireAdmin();
-  const { db } = await getRequestContext();
+  const { db, env } = await getRequestContext();
   const settings = await getSettings(db);
+
+  const models = env.ANTHROPIC_API_KEY ? await listClaudeModels(createAnthropicClient(env)) : FALLBACK_MODELS;
+  const availableModels = models.map((m) => m.id);
 
   const [allowlist, users, apiKeys, categories, profiles] = await Promise.all([
     db.select().from(schema.adminAllowlist),
@@ -47,9 +52,16 @@ export default async function SettingsPage() {
 
   const categoryIds = [...new Set(categories.map((c) => c.categoryId))];
 
+  // Keep models already in use selectable even if the API no longer lists them.
+  const inUse = [settings.moderation_model, ...profiles.map((p) => p.model)];
+  const modelOptions = [...availableModels, ...inUse.filter((m) => !availableModels.includes(m))];
+  const defaultModel = newestOfLine(models, "sonnet") ?? availableModels[0];
+
   return (
     <SettingsScreen
       admins={admins}
+      modelOptions={[...new Set(modelOptions)]}
+      defaultModel={defaultModel}
       apiKeys={apiKeys.map((k) => ({
         id: k.id,
         name: k.name,
