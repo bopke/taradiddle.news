@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { JobStatus, TopicSource, TopicStatus } from "@/db/schema";
 
@@ -195,4 +196,55 @@ export function formatDateTime(date: Date | null | undefined): string {
   if (!date) return "—";
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+}
+
+/**
+ * Prev/next pager under admin tables. `params` are the other query params to
+ * keep (e.g. the topics status tab); page 1 is linked without `?page`.
+ */
+export function Pagination({
+  basePath,
+  page,
+  pageCount,
+  params = {},
+}: {
+  basePath: string;
+  page: number;
+  pageCount: number;
+  params?: Record<string, string>;
+}) {
+  if (pageCount <= 1) return null;
+  const href = (p: number) => {
+    const query = new URLSearchParams(params);
+    if (p > 1) query.set("page", String(p));
+    const qs = query.toString();
+    return qs ? `${basePath}?${qs}` : basePath;
+  };
+  const linkClass = adminBtnClass({ small: true });
+  const disabledClass = cn(linkClass, "pointer-events-none opacity-50");
+  return (
+    <nav aria-label="Pagination" className="mt-3 flex items-center justify-end gap-2 text-[12px] text-admin-ink-dim">
+      <span className="mr-1 tabular-nums">
+        Page {page} of {pageCount}
+      </span>
+      {page > 1 ? (
+        <Link href={href(page - 1)} className={linkClass}>
+          ← Newer
+        </Link>
+      ) : (
+        <span aria-disabled className={disabledClass}>
+          ← Newer
+        </span>
+      )}
+      {page < pageCount ? (
+        <Link href={href(page + 1)} className={linkClass}>
+          Older →
+        </Link>
+      ) : (
+        <span aria-disabled className={disabledClass}>
+          Older →
+        </span>
+      )}
+    </nav>
+  );
 }

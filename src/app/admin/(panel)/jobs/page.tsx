@@ -1,4 +1,5 @@
-import { listJobs } from "@/lib/admin/jobs";
+import { countJobs, listJobs } from "@/lib/admin/jobs";
+import { pageWindow } from "@/lib/admin/pagination";
 import { getRequestContext } from "@/lib/request-context";
 import {
   adminBtnClass,
@@ -6,6 +7,7 @@ import {
   CellTitle,
   formatDateTime,
   PageHead,
+  Pagination,
   StatusPill,
   tableClass,
   tdClass,
@@ -16,9 +18,15 @@ import { retryJobAction } from "../actions";
 
 export const metadata = { title: "Generation jobs — Taradiddle Admin" };
 
-export default async function JobsPage() {
+export default async function JobsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { db } = await getRequestContext();
-  const jobs = await listJobs(db, 200);
+  const [total, query] = await Promise.all([countJobs(db), searchParams]);
+  const { page, pageCount, offset, limit } = pageWindow(query.page, total);
+  const jobs = await listJobs(db, limit, offset);
 
   return (
     <>
@@ -81,6 +89,7 @@ export default async function JobsPage() {
           </tbody>
         </table>
       </div>
+      <Pagination basePath="/admin/jobs" page={page} pageCount={pageCount} />
     </>
   );
 }

@@ -16,6 +16,7 @@ import {
   formatDateTime,
   LocChip,
   PageHead,
+  Pagination,
   StatusPill,
   tableClass,
   tdClass,
@@ -41,7 +42,15 @@ export type ArticleRow = {
 
 type Confirm = { type: "regenerate" | "delete"; article: ArticleRow };
 
-export function ArticlesScreen({ articles }: { articles: ArticleRow[] }) {
+export function ArticlesScreen({
+  articles,
+  page,
+  pageCount,
+}: {
+  articles: ArticleRow[];
+  page: number;
+  pageCount: number;
+}) {
   const router = useRouter();
   const [confirm, setConfirm] = useState<Confirm | null>(null);
 
@@ -140,6 +149,7 @@ export function ArticlesScreen({ articles }: { articles: ArticleRow[] }) {
           </tbody>
         </table>
       </div>
+      <Pagination basePath="/admin/articles" page={page} pageCount={pageCount} />
     </>
   );
 }

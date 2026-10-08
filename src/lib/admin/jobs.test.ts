@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import * as schema from "@/db/schema";
 import { createTestDb, type TestDb } from "@/db/test-helpers";
 import type { AuthDb } from "@/lib/auth";
-import { countUnresolvedFailedJobs, listJobs } from "./jobs";
+import { countJobs, countUnresolvedFailedJobs, listJobs } from "./jobs";
 
 let db: TestDb;
 const asDb = () => db as unknown as AuthDb;
@@ -59,5 +59,19 @@ describe("failed-job resolution", () => {
     insertJob(null, "failed");
     insertJob(insertTopic().id, "succeeded");
     expect(await countUnresolvedFailedJobs(asDb())).toBe(1);
+  });
+});
+
+describe("job paging", () => {
+  it("pages newest-first without overlap", async () => {
+    const topic = insertTopic();
+    // Same createdAt second for all rows — the id tiebreaker keeps order stable.
+    const ids = Array.from({ length: 5 }, () => insertJob(topic.id, "succeeded").id);
+    expect(await countJobs(asDb())).toBe(5);
+
+    const first = await listJobs(asDb(), 2, 0);
+    const second = await listJobs(asDb(), 2, 2);
+    const third = await listJobs(asDb(), 2, 4);
+    expect([...first, ...second, ...third].map((r) => r.job.id)).toEqual([...ids].reverse());
   });
 });

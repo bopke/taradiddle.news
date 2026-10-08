@@ -30,8 +30,13 @@ export type JobRow = {
   resolved: boolean;
 };
 
+export async function countJobs(db: AuthDb): Promise<number> {
+  const [row] = await db.select({ total: count() }).from(schema.generationJobs);
+  return row.total;
+}
+
 /** Newest-first job log with topic titles and per-row resolution. */
-export async function listJobs(db: AuthDb, limit: number): Promise<JobRow[]> {
+export async function listJobs(db: AuthDb, limit: number, offset = 0): Promise<JobRow[]> {
   const rows = await db
     .select({
       job: schema.generationJobs,
@@ -40,8 +45,9 @@ export async function listJobs(db: AuthDb, limit: number): Promise<JobRow[]> {
     })
     .from(schema.generationJobs)
     .leftJoin(schema.topics, eq(schema.generationJobs.topicId, schema.topics.id))
-    .orderBy(desc(schema.generationJobs.createdAt))
-    .limit(limit);
+    .orderBy(desc(schema.generationJobs.createdAt), desc(schema.generationJobs.id))
+    .limit(limit)
+    .offset(offset);
 
   return rows.map((row) => ({
     ...row,

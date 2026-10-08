@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -17,6 +18,7 @@ import {
   fieldClass,
   formatDateTime,
   PageHead,
+  Pagination,
   SourceTag,
   StatusPill,
   STATUS_META,
@@ -59,20 +61,25 @@ const TABS: ("all" | TopicStatus)[] = [
 ];
 
 export function TopicsScreen({
+  tab,
+  page,
+  pageCount,
+  counts,
   topics,
   categories,
   profiles,
 }: {
+  tab: "all" | TopicStatus;
+  page: number;
+  pageCount: number;
+  counts: Partial<Record<"all" | TopicStatus, number>>;
   topics: TopicRow[];
   categories: CategoryOption[];
   profiles: ProfileOption[];
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"all" | TopicStatus>("suggested");
   const [selected, setSelected] = useState<number[]>([]);
   const [showAdd, setShowAdd] = useState(false);
-
-  const visible = topics.filter((t) => tab === "all" || t.status === tab);
   const toggle = (id: number) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
@@ -97,22 +104,20 @@ export function TopicsScreen({
 
       <div className="mb-4 flex flex-wrap items-center gap-0.5 border-b border-admin-border">
         {TABS.map((s) => (
-          <button
+          <Link
             key={s}
+            href={`/admin/topics?status=${s}`}
+            aria-current={tab === s ? "page" : undefined}
             className={cn(
               "flex items-center gap-1.5 border-b-2 border-transparent px-3 py-2 text-[12.5px] font-semibold text-admin-ink-dim hover:text-admin-ink",
               tab === s && "border-accent text-admin-ink",
             )}
-            onClick={() => {
-              setTab(s);
-              setSelected([]);
-            }}
           >
             {s === "all" ? "All" : STATUS_META[s].label}
             <span className="rounded-lg bg-[#ececec] px-1.5 py-px text-[10px] font-bold text-admin-ink-dim">
-              {s === "all" ? topics.length : topics.filter((t) => t.status === s).length}
+              {counts[s] ?? 0}
             </span>
-          </button>
+          </Link>
         ))}
       </div>
 
@@ -152,14 +157,14 @@ export function TopicsScreen({
             </tr>
           </thead>
           <tbody>
-            {visible.length === 0 && (
+            {topics.length === 0 && (
               <tr>
                 <td colSpan={6} className={cn(tdClass, "text-admin-ink-dim")}>
                   Nothing here.
                 </td>
               </tr>
             )}
-            {visible.map((t) => (
+            {topics.map((t) => (
               <tr
                 key={t.id}
                 tabIndex={0}
@@ -203,6 +208,7 @@ export function TopicsScreen({
           </tbody>
         </table>
       </div>
+      <Pagination basePath="/admin/topics" page={page} pageCount={pageCount} params={{ status: tab }} />
     </>
   );
 }
