@@ -1,0 +1,1 @@
+ALTER TABLE `generation_profiles` DROP COLUMN `temperature`;

@@ -50,7 +50,6 @@ type ProfileEntry = {
   id: number;
   name: string;
   model: string;
-  temperature: number | null;
   maxOutputTokens: number;
   instructions: string;
   isDefault: boolean;
@@ -591,7 +590,7 @@ function ProfilesPanel({
                 )}
               </span>
               <span className="font-mono text-[11px] text-admin-ink-dim">
-                {p.model} · temp {p.temperature === null ? "model default" : p.temperature.toFixed(1)}
+                {p.model} · max {p.maxOutputTokens} tokens
               </span>
             </button>
           ))}
@@ -614,22 +613,9 @@ function ProfilesPanel({
               </select>
             </Field>
           </div>
-          <div className="flex gap-3.5">
-            <Field label="Temperature" hint="Leave empty for the model default (required for Opus 4.7+, Sonnet 5+ and newer).">
-              <input
-                name="temperature"
-                type="number"
-                step="0.1"
-                min="0"
-                max="1"
-                defaultValue={selected?.temperature ?? ""}
-                className={fieldClass}
-              />
-            </Field>
-            <Field label="Max output tokens">
-              <input name="maxOutputTokens" type="number" defaultValue={selected?.maxOutputTokens ?? 4096} className={fieldClass} />
-            </Field>
-          </div>
+          <Field label="Max output tokens">
+            <input name="maxOutputTokens" type="number" defaultValue={selected?.maxOutputTokens ?? 4096} className={fieldClass} />
+          </Field>
           <Field label="Writing instructions" hint="Appended to the generation prompt for articles using this profile.">
             <textarea name="instructions" rows={5} defaultValue={selected?.instructions ?? ""} className={fieldClass} />
           </Field>

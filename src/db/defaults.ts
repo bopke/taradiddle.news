@@ -50,7 +50,6 @@ export type SettingsShape = {
 export const DEFAULT_PROFILE = {
   name: "House style",
   model: "claude-sonnet-5-5",
-  temperature: null,
   maxOutputTokens: 4096,
   instructions:
     "Standard Taradiddle voice: dry, deadpan, economical. Quote at least one " +

@@ -120,7 +120,6 @@ describe("generation profiles", () => {
   const FIELDS = {
     name: "House style",
     model: "claude-sonnet-4-6",
-    temperature: null,
     maxOutputTokens: 4096,
     instructions: "",
   };

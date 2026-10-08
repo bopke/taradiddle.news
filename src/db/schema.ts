@@ -3,7 +3,6 @@ import {
   index,
   integer,
   primaryKey,
-  real,
   sqliteTable,
   text,
   uniqueIndex,
@@ -334,8 +333,6 @@ export const generationProfiles = sqliteTable("generation_profiles", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull().unique(),
   model: text("model").notNull(),
-  /** Null = omit from the request (required for Opus 4.7+, which rejects it). */
-  temperature: real("temperature"),
   maxOutputTokens: integer("max_output_tokens").notNull().default(4096),
   /** Appended to the base generation prompt — the profile's writing voice. */
   instructions: text("instructions").notNull().default(""),

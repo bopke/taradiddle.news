@@ -25,7 +25,6 @@ export type GeneratedArticle = z.infer<typeof articleMetaSchema> & { body_md: st
 /** The subset of a generation_profiles row the generator needs. */
 export type GenerationProfileInput = {
   model: string;
-  temperature: number | null;
   maxOutputTokens: number;
   instructions: string;
 };
@@ -97,9 +96,6 @@ export async function generateArticle(
   const message = await client.messages.create({
     model: profile.model,
     max_tokens: profile.maxOutputTokens,
-    // Omitted when null: profiles default to the model's own sampling, and
-    // newer Opus models (4.7+) reject the parameter outright.
-    ...(profile.temperature !== null ? { temperature: profile.temperature } : {}),
     system: profile.instructions ? `${system}\n\n${profile.instructions}` : system,
     messages: [{ role: "user", content: user }],
   });

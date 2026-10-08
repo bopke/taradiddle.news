@@ -4,7 +4,6 @@ import { mockAnthropicClient, type ParseCall } from "./test-utils";
 
 const PROFILE: GenerationProfileInput = {
   model: "claude-sonnet-4-6",
-  temperature: null,
   maxOutputTokens: 4096,
   instructions: "Keep articles between 350 and 550 words.",
 };
@@ -52,18 +51,6 @@ describe("generateArticle", () => {
     const { client } = mockAnthropicClient(() => ({ ...ARTICLE, body_md: body }));
     const article = await generateArticle(client, PROFILE, CTX);
     expect(article.body_md).toBe(body.trim());
-  });
-
-  it("omits temperature when the profile has none", async () => {
-    const { client, createMock } = mockAnthropicClient(() => ARTICLE);
-    await generateArticle(client, PROFILE, CTX);
-    expect("temperature" in createMock.mock.calls[0][0]).toBe(false);
-  });
-
-  it("sends temperature when the profile sets one", async () => {
-    const { client, createMock } = mockAnthropicClient(() => ARTICLE);
-    await generateArticle(client, { ...PROFILE, temperature: 0.9 }, CTX);
-    expect(createMock.mock.calls[0][0].temperature).toBe(0.9);
   });
 
   it("offers categories when unassigned and forbids picking when assigned", async () => {

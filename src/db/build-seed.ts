@@ -23,8 +23,8 @@ for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
 lines.push("");
 
 lines.push(
-  `INSERT OR IGNORE INTO generation_profiles (name, model, temperature, max_output_tokens, instructions, is_default)` +
-    ` VALUES (${q(DEFAULT_PROFILE.name)}, ${q(DEFAULT_PROFILE.model)}, NULL, ${DEFAULT_PROFILE.maxOutputTokens}, ${q(DEFAULT_PROFILE.instructions)}, 1);`,
+  `INSERT OR IGNORE INTO generation_profiles (name, model, max_output_tokens, instructions, is_default)` +
+    ` VALUES (${q(DEFAULT_PROFILE.name)}, ${q(DEFAULT_PROFILE.model)}, ${DEFAULT_PROFILE.maxOutputTokens}, ${q(DEFAULT_PROFILE.instructions)}, 1);`,
 );
 lines.push("");
 

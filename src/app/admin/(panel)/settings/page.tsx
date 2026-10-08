@@ -79,7 +79,6 @@ export default async function SettingsPage() {
         id: p.id,
         name: p.name,
         model: p.model,
-        temperature: p.temperature,
         maxOutputTokens: p.maxOutputTokens,
         instructions: p.instructions,
         isDefault: p.isDefault,

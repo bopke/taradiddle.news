@@ -5,7 +5,6 @@ import { BODY_DELIMITER, serializeFields } from "./ai-output";
 export type ParseCall = {
   model: string;
   max_tokens: number;
-  temperature?: number;
   system: string;
   messages: { role: string; content: string }[];
 };

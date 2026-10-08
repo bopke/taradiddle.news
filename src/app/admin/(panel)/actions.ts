@@ -242,11 +242,9 @@ export async function resetModerationPromptAction(): Promise<void> {
 
 function profileFields(formData: FormData) {
   const text = (name: string) => String(formData.get(name) ?? "").trim();
-  const temp = text("temperature");
   return {
     name: text("name"),
     model: text("model"),
-    temperature: temp === "" ? null : Number(temp),
     maxOutputTokens: Math.max(256, Number(text("maxOutputTokens") || 4096)),
     instructions: text("instructions"),
   };

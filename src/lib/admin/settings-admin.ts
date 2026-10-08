@@ -10,7 +10,6 @@ import type { ActionResult } from "./topics";
 export type ProfileFields = {
   name: string;
   model: string;
-  temperature: number | null;
   maxOutputTokens: number;
   instructions: string;
 };
