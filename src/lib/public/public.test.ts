@@ -8,6 +8,7 @@ import {
   getArticleBySlug,
   getFeedPage,
   getMostProcessed,
+  getTagArticles,
   PAGE_SIZE,
   searchArticles,
 } from "./queries";
@@ -136,6 +137,29 @@ describe("most processed & search", () => {
     const hits = await searchArticles(deps("pl"), "Treść numer 1");
     expect(hits.map((a) => a.title)).toEqual(["Artykuł 1"]);
     expect(await searchArticles(deps("en"), "number 2")).toHaveLength(1);
+  });
+});
+
+describe("tag articles", () => {
+  it("returns only published articles carrying the tag", async () => {
+    const tagged = insertArticle(1);
+    insertArticle(2);
+    const hidden = insertArticle(3, { status: "unpublished" });
+    const tag = db.insert(schema.tags).values({}).returning().get();
+    db.insert(schema.articleTags)
+      .values([
+        { articleId: tagged.id, tagId: tag.id },
+        { articleId: hidden.id, tagId: tag.id },
+      ])
+      .run();
+
+    const articles = await getTagArticles(deps("en"), tag.id);
+    expect(articles.map((a) => a.title)).toEqual(["Article 1"]);
+  });
+
+  it("returns nothing for a tag with no articles", async () => {
+    const tag = db.insert(schema.tags).values({}).returning().get();
+    expect(await getTagArticles(deps("en"), tag.id)).toEqual([]);
   });
 });
 

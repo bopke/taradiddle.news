@@ -279,19 +279,12 @@ export async function getTagBySlug(
 }
 
 export async function getTagArticles(deps: PublicDeps, tagId: number, limit = 24) {
-  const links = await deps.db
+  // Subquery, not an id list: a popular tag would exceed D1's 100-bound-parameter limit.
+  const tagged = deps.db
     .select({ articleId: schema.articleTags.articleId })
     .from(schema.articleTags)
     .where(eq(schema.articleTags.tagId, tagId));
-  if (links.length === 0) return [];
-  return fetchArticles(
-    deps,
-    inArray(
-      schema.articles.id,
-      links.map((l) => l.articleId),
-    ),
-    { limit },
-  );
+  return fetchArticles(deps, inArray(schema.articles.id, tagged), { limit });
 }
 
 export async function searchArticles(deps: PublicDeps, query: string, limit = 24) {

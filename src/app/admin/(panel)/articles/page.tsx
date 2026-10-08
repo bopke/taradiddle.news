@@ -1,4 +1,4 @@
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import * as schema from "@/db/schema";
 import { getRequestContext } from "@/lib/request-context";
 import { getSettings } from "@/lib/settings";
@@ -10,24 +10,22 @@ export default async function ArticlesPage() {
   const { db } = await getRequestContext();
   const settings = await getSettings(db);
 
-  const [articles, categories] = await Promise.all([
+  // Every article is listed, so load all translations rather than filtering
+  // by id — an id list would hit D1's 100-bound-parameter limit.
+  const [articles, categories, translations] = await Promise.all([
     db.select().from(schema.articles).orderBy(desc(schema.articles.generatedAt)),
     db
       .select()
       .from(schema.categoryTranslations)
       .where(eq(schema.categoryTranslations.locale, settings.default_locale)),
+    db
+      .select({
+        articleId: schema.articleTranslations.articleId,
+        locale: schema.articleTranslations.locale,
+        title: schema.articleTranslations.title,
+      })
+      .from(schema.articleTranslations),
   ]);
-  const translations = articles.length
-    ? await db
-        .select()
-        .from(schema.articleTranslations)
-        .where(
-          inArray(
-            schema.articleTranslations.articleId,
-            articles.map((a) => a.id),
-          ),
-        )
-    : [];
   const byArticle = new Map<number, typeof translations>();
   for (const t of translations) {
     const group = byArticle.get(t.articleId) ?? [];
