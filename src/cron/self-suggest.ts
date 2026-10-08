@@ -14,14 +14,16 @@ const RECENT_TITLES = 25;
  * Daily self-suggestion: ask Claude for fresh topics, screen each through
  * moderation, dedup (the unique index on normalized_title is the backstop),
  * insert the survivors as `suggested` with source "ai".
+ *
+ * `force` (admin "Run pipeline now") skips the enabled toggle.
  */
-export async function runSelfSuggest(deps: {
-  db: AuthDb;
-  anthropic: Anthropic;
-}): Promise<{ inserted: number; flagged: number; duplicates: number }> {
+export async function runSelfSuggest(
+  deps: { db: AuthDb; anthropic: Anthropic },
+  opts: { force?: boolean } = {},
+): Promise<{ inserted: number; flagged: number; duplicates: number }> {
   const { db, anthropic } = deps;
   const settings = await getSettings(db);
-  if (!settings.self_suggest_enabled) return { inserted: 0, flagged: 0, duplicates: 0 };
+  if (!settings.self_suggest_enabled && !opts.force) return { inserted: 0, flagged: 0, duplicates: 0 };
 
   const [defaultProfile] = await db
     .select()

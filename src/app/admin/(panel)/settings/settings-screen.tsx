@@ -31,6 +31,7 @@ import {
   removeAdminAction,
   resetModerationPromptAction,
   revokeApiKeyAction,
+  runPipelineNowAction,
   saveCategoryAction,
   saveModerationSettingsAction,
   savePipelineSettingsAction,
@@ -449,6 +450,7 @@ function GenerationTab({
   modelOptions: string[];
   defaultModel: string;
 }) {
+  const [runState, runAction, running] = useActionState(() => runPipelineNowAction(), null);
   return (
     <>
       <ProfilesPanel profiles={profiles} modelOptions={modelOptions} defaultModel={defaultModel} />
@@ -457,12 +459,30 @@ function GenerationTab({
           <Panel
             title="Pipeline"
             actions={
-              <button type="submit" className={adminBtnClass({ kind: "primary", small: true })}>
-                Save
-              </button>
+              <div className="flex gap-2">
+                <button
+                  formAction={runAction}
+                  disabled={running}
+                  title="Brainstorm topics and queue generation now, even if the toggles are off"
+                  className={adminBtnClass({ small: true })}
+                >
+                  {running ? "Running…" : "Run pipeline now"}
+                </button>
+                <button type="submit" className={adminBtnClass({ kind: "primary", small: true })}>
+                  Save
+                </button>
+              </div>
             }
           >
             <div className="flex flex-col gap-3.5">
+              {runState && (
+                <p
+                  role={runState.ok ? "status" : "alert"}
+                  className={cn("text-xs font-semibold", runState.ok ? "text-admin-ink-dim" : "text-accent")}
+                >
+                  {runState.ok ? runState.message : runState.error}
+                </p>
+              )}
               <div className="flex gap-3.5">
                 <Field label="Auto-generate">
                   <select name="autoGenerate" defaultValue={settings.autoGenerateEnabled ? "on" : "off"} className={fieldClass}>

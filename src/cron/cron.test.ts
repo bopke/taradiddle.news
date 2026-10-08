@@ -45,6 +45,14 @@ describe("runAutoGenerate", () => {
     expect(sent).toHaveLength(0);
   });
 
+  it("force runs while disabled and records a manual trigger", async () => {
+    const topic = insertTopic();
+    const { queue, sent } = makeQueue();
+    const result = await runAutoGenerate({ db: asDb(), queue }, NOW, { force: true, trigger: "manual" });
+    expect(result.enqueued).toBe(1);
+    expect(sent).toMatchObject([{ kind: "generate", topicId: topic.id, trigger: "manual" }]);
+  });
+
   it("enqueues only due approved topics", async () => {
     await setSetting(asDb(), "auto_generate_enabled", true);
     await setSetting(asDb(), "auto_generate_batch_size", 10); // filtering under test, not the cap
@@ -149,6 +157,13 @@ describe("runSelfSuggest", () => {
     const result = await runSelfSuggest({ db: asDb(), anthropic: client });
     expect(result).toEqual({ inserted: 0, flagged: 0, duplicates: 0 });
     expect(parseMock).not.toHaveBeenCalled();
+  });
+
+  it("force runs while disabled", async () => {
+    seedProfile();
+    const { client } = makeClient();
+    const result = await runSelfSuggest({ db: asDb(), anthropic: client }, { force: true });
+    expect(result.inserted).toBeGreaterThan(0);
   });
 
   it("inserts allowed suggestions as ai-sourced topics, dropping flagged ones", async () => {

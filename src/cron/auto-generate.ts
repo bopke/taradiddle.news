@@ -10,13 +10,16 @@ import { enqueueGeneration, type GenerationQueue } from "@/queue/producer";
  * per-run cap and enqueues them for generation. When no approved topic is
  * due, falls back to suggested topics under the same rules, so the pipeline
  * keeps publishing when the approval queue runs dry.
+ *
+ * `force` (admin "Run pipeline now") skips the enabled toggle.
  */
 export async function runAutoGenerate(
   deps: { db: AuthDb; queue: GenerationQueue },
   now: Date = new Date(),
+  opts: { force?: boolean; trigger?: "cron" | "manual" } = {},
 ): Promise<{ enqueued: number }> {
   const settings = await getSettings(deps.db);
-  if (!settings.auto_generate_enabled) return { enqueued: 0 };
+  if (!settings.auto_generate_enabled && !opts.force) return { enqueued: 0 };
 
   const pickDue = (status: schema.TopicStatus) =>
     deps.db
@@ -42,7 +45,7 @@ export async function runAutoGenerate(
     deps.db,
     deps.queue,
     due.map((t) => t.id),
-    "cron",
+    opts.trigger ?? "cron",
   );
   if (due.length > 0) {
     console.log(

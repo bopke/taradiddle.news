@@ -31,6 +31,9 @@ import {
   type ActionResult,
 } from "@/lib/admin/topics";
 import { DEFAULT_MODERATION_PROMPT } from "@/db/defaults";
+import { runAutoGenerate } from "@/cron/auto-generate";
+import { runSelfSuggest } from "@/cron/self-suggest";
+import { createAnthropicClient, describeAnthropicError } from "@/lib/anthropic";
 import { getSettings, setSetting } from "@/lib/settings";
 import { enqueueRegeneration, enqueueTranslation } from "@/queue/producer";
 
@@ -38,7 +41,7 @@ async function ctx() {
   const user = await requireAdmin();
   const { db } = await getRequestContext();
   const { env } = await getCloudflareContext({ async: true });
-  return { user, db, queue: env.GENERATION_QUEUE };
+  return { user, db, env, queue: env.GENERATION_QUEUE };
 }
 
 /* ── Topics ───────────────────────────────────────────────────────────────── */
@@ -221,6 +224,30 @@ export async function savePipelineSettingsAction(formData: FormData): Promise<vo
   );
   await setSetting(db, "self_suggest_hints", String(formData.get("selfSuggestHints") ?? "").trim());
   revalidatePath("/admin/settings");
+}
+
+/**
+ * Runs both cron steps now, ignoring their enabled toggles: brainstorm new
+ * topics, then enqueue due topics exactly like the 4-hourly auto-generate.
+ */
+export async function runPipelineNowAction(): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
+  const { db, env, queue } = await ctx();
+  try {
+    const suggested = await runSelfSuggest({ db, anthropic: createAnthropicClient(env) }, { force: true });
+    const { enqueued } = await runAutoGenerate({ db, queue }, new Date(), { force: true, trigger: "manual" });
+    revalidatePath("/admin", "layout");
+    return {
+      ok: true,
+      message:
+        `Suggested ${suggested.inserted} topic(s)` +
+        (suggested.flagged ? `, ${suggested.flagged} filtered by moderation` : "") +
+        (suggested.duplicates ? `, ${suggested.duplicates} duplicate(s)` : "") +
+        `. Queued ${enqueued} for generation — watch Jobs.`,
+    };
+  } catch (error) {
+    console.error("run pipeline now failed", error);
+    return { ok: false, error: describeAnthropicError(error) };
+  }
 }
 
 export async function saveModerationSettingsAction(formData: FormData): Promise<void> {
